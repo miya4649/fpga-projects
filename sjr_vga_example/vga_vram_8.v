@@ -28,8 +28,8 @@ module vga_vram_8
    input signed [32-1 : 0]  offset_v,
    input                    ext_clkv,
    input                    ext_resetv,
-   output reg               ext_vga_hs,
-   output reg               ext_vga_vs,
+   output                   ext_vga_hs,
+   output                   ext_vga_vs,
    output signed [8-1 : 0]  ext_vga_r,
    output signed [8-1 : 0]  ext_vga_g,
    output signed [8-1 : 0]  ext_vga_b
@@ -48,7 +48,12 @@ module vga_vram_8
   reg [9:0]                 count_v;
   reg [9:0]                 count_hp;
   reg [9:0]                 count_vp;
-  reg                       pixel_valid;
+  wire                      vga_hs;
+  wire                      vga_vs;
+  wire                      pixel_valid;
+  reg [1:0]                 vga_hs_delay;
+  reg [1:0]                 vga_vs_delay;
+  reg [1:0]                 pixel_valid_delay;
 
   // H counter
   always @(posedge ext_clkv)
@@ -108,23 +113,29 @@ module vga_vram_8
         end
     end
 
+  // H sync
+  assign vga_hs = ((count_h >= C_VGA_SYNC_H_START) && (count_h < C_VGA_SYNC_H_END)) ? 1'b0 : 1'b1;
+  // V sync
+  assign vga_vs = ((count_v >= C_VGA_SYNC_V_START) && (count_v < C_VGA_SYNC_V_END)) ? 1'b0 : 1'b1;
+  // Pixel valid
+  assign pixel_valid = ((count_h < C_VGA_WIDTH) && (count_v < C_VGA_HEIGHT)) ? 1'b1 : 1'b0;
+  // delay (1 cycle)
   always @(posedge ext_clkv)
     begin
-      // H sync
-      ext_vga_hs <= ((count_h >= C_VGA_SYNC_H_START) && (count_h < C_VGA_SYNC_H_END)) ? 1'b0 : 1'b1;
-      // V sync
-      ext_vga_vs <= ((count_v >= C_VGA_SYNC_V_START) && (count_v < C_VGA_SYNC_V_END)) ? 1'b0 : 1'b1;
-      // Pixel valid
-      pixel_valid <= ((count_h < C_VGA_WIDTH) && (count_v < C_VGA_HEIGHT)) ? 1'b1 : 1'b0;
+      vga_hs_delay <= {vga_hs_delay[0], vga_hs};
+      vga_vs_delay <= {vga_vs_delay[0], vga_vs};
+      pixel_valid_delay <= {pixel_valid_delay[0], pixel_valid};
     end
+
+  // ext out
+  assign ext_vga_r = pixel_valid_delay[1] ? {vram_odata[7:5], 1'b0} : 4'd0;
+  assign ext_vga_g = pixel_valid_delay[1] ? {vram_odata[4:2], 1'b0} : 4'd0;
+  assign ext_vga_b = pixel_valid_delay[1] ? {vram_odata[1:0], 2'b0} : 4'd0;
+  assign ext_vga_hs = vga_hs_delay[1];
+  assign ext_vga_vs = vga_vs_delay[1];
 
   // vsync out
   assign vsync = ext_vga_vs;
-
-  // Color
-  assign ext_vga_r = pixel_valid ? {vram_odata[7:5], 1'b0} : 4'd0;
-  assign ext_vga_g = pixel_valid ? {vram_odata[4:2], 1'b0} : 4'd0;
-  assign ext_vga_b = pixel_valid ? {vram_odata[1:0], 2'b0} : 4'd0;
 
   // VRAM
   wire [7:0]  vram_idata;
@@ -173,8 +184,14 @@ module dual_port_ram
    );
 
   reg [DATA_WIDTH-1:0]       ram[ADDR_WIDTH-1:0];
+  reg [(ADDR_WIDTH-1):0]     read_addr_reg;
 
-  assign data_out = ram[read_addr];
+  assign data_out = ram[read_addr_reg];
+
+  always @(posedge read_clock)
+    begin
+      read_addr_reg <= read_addr;
+    end
 
   always @(posedge write_clock)
     begin
