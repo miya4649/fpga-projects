@@ -4,7 +4,7 @@
 Synthesijerはあらかじめ以下の方法でインストールしているものとします。
 http://cellspe.matrix.jp/zerofpga/synthesijer.html
 
-Synthesijer配布物のsynthesijer-code/lib/verilog/singleportram.vをこのディレクトリ（sjr_vga_example以下）にコピーします。
+Synthesijer配布物のsynthesijer_lib*/verilog/singleportram.vをこのディレクトリ（sjr_vga_example以下）にコピーします。
 
 sjr_vga_example/synthesijer にcdしてmakeします。
 

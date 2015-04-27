@@ -1,6 +1,5 @@
-SIJERPATH=$(HOME)/synthesijer
-SIJERLINKPATH=synthesijer/bin
-SYNTHESIJER=$(SIJERPATH)/$(SIJERLINKPATH)
+SJR:=$(wildcard $(HOME)/synthesijer/synthesijer-*.jar)
+SYNTHESIJER?=$(SJR)
 CLASSPATH=$(SYNTHESIJER):.
 
 SOURCES=*.java
