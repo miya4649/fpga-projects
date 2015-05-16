@@ -38,7 +38,7 @@
 
 set_global_assignment -name FAMILY "Cyclone II"
 set_global_assignment -name DEVICE EP2C20F484C7
-set_global_assignment -name TOP_LEVEL_ENTITY vga_test
+set_global_assignment -name TOP_LEVEL_ENTITY sjr_vga_example
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION "13.0 SP1"
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "20:52:53  MARCH 19, 2015"
 set_global_assignment -name LAST_QUARTUS_VERSION "13.0 SP1"
@@ -497,9 +497,6 @@ set_instance_assignment -name IO_STANDARD LVTTL -to AUD_DACLRCK
 set_instance_assignment -name IO_STANDARD LVTTL -to AUD_DACDAT
 set_instance_assignment -name IO_STANDARD LVTTL -to AUD_XCK
 set_instance_assignment -name IO_STANDARD LVTTL -to AUD_BCLK
-set_global_assignment -name VERILOG_FILE vga_vram_8.v
-set_global_assignment -name VERILOG_FILE vga_test.v
-set_global_assignment -name VERILOG_FILE vga_pll.v
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_COLOR 2147039 -section_id Top
 set_global_assignment -name LL_ROOT_REGION ON -section_id "Root Region"

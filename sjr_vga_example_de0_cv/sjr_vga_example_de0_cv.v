@@ -13,10 +13,9 @@
   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-module vga_test
+module sjr_vga_example_de0_cv
   (
    input        CLOCK_50,
-   input [1:0]  CLOCK_27,
    input [3:0]  KEY,
    output       VGA_HS,
    output       VGA_VS,
@@ -43,11 +42,12 @@ module vga_test
     end
 
 
-  vga_pll vga_pll_0
+  av_pll av_pll_0
     (
-     .inclk0 (CLOCK_27[1]),
-     .c0 (clk_video),
-     .c1 (clk_audio)
+     .refclk (CLOCK_50),
+     .rst (areset),
+     .outclk_0 (clk_video),
+     .outclk_1 (clk_audio)
      );
 
 
