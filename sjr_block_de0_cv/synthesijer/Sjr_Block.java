@@ -15,18 +15,27 @@
 
 public class Sjr_Block extends Thread
 {
-  private static final int ZERO = 0;
   private static final int LINE_WIDTH = 64;
   private static final int STAGE_WIDTH = 32;
   private static final int VRAM_WIDTH = 40;
   private static final int VRAM_HEIGHT = 30;
   private static final byte BALL_COLOR = (byte)255;
+  private static final byte WALL_COLOR = (byte)109;
   private static final byte NONE_COLOR = (byte)0;
   private static final int BALL_NUM = 4;
   private static final int BLOCK_NUM = 30;
   private static final int STATE_GAMEOVER = 0;
   private static final int STATE_PLAYING = 1;
   private static final int STATE_CLEAR = 2;
+  private static final int BOARD_KEY0 = 1;
+  private static final int BOARD_KEY1 = 2;
+  private static final int BOARD_KEY2 = 4;
+  private static final int BOARD_KEY3 = 8;
+  private static final int DEFAULT_GAMESPEED = 4;
+  private static final int DEFAULT_PADDLESIZE = 5;
+  private static final int MIN_GAMESPEED = 1;
+  private static final int MIN_PADDLESIZE = 3;
+  private static final int SHOTBALLTIME = 45;
   private int random = -59634649;
   private final VgaVram8 vram = new VgaVram8();
   private final SoundGenerator psg = new SoundGenerator();
@@ -121,7 +130,7 @@ public class Sjr_Block extends Thread
   private void paddleRun()
   {
     int newPaddleX = paddleX;
-    if ((boardKey.data & 1) == 1)
+    if ((boardKey.data & BOARD_KEY0) == BOARD_KEY0)
     {
       newPaddleX = paddleX + 2;
       if (newPaddleX + paddleSize > 27)
@@ -130,7 +139,7 @@ public class Sjr_Block extends Thread
       }
       fillRect(paddleX - paddleSize, paddleY, newPaddleX - paddleX, 1, NONE_COLOR);
     }
-    else if ((boardKey.data & 8) == 8)
+    else if ((boardKey.data & BOARD_KEY3) == BOARD_KEY3)
     {
       newPaddleX = paddleX - 2;
       if (newPaddleX - paddleSize < 4)
@@ -146,7 +155,7 @@ public class Sjr_Block extends Thread
 
   private void shotBall()
   {
-    if (shotBallTimer > 45)
+    if (shotBallTimer > SHOTBALLTIME)
     {
       shotBallTimer = 0;
       if (ballOnStage < BALL_NUM)
@@ -398,11 +407,14 @@ public class Sjr_Block extends Thread
     psg.setParameter(1, 0, 6, -8000, 4096, 8192, 100010, 100000);
     psg.setParameter(2, 0, 2, 600, 6144, 6144, 30010, 30000);
     psg.setParameter(3, 0, 4, -100, 8192, 4096, 96000, 10000);
+
+    // clear screen
+    fillRect(0, 0, VRAM_WIDTH, VRAM_HEIGHT, WALL_COLOR);
   }
 
   public void gameStart()
   {
-    // clear screen
+    // clear stage screen
     fillRect(0, 0, 32, VRAM_HEIGHT, (byte)0);
 
     // init blocks
@@ -414,7 +426,7 @@ public class Sjr_Block extends Thread
         if ((x == 0) || (x == 7) || (y == 0))
         {
           blockEnable[bid] = true;
-          blockColor[bid] = (byte)109;
+          blockColor[bid] = WALL_COLOR;
           blockWall[bid] = true;
         }
         else
@@ -467,14 +479,14 @@ public class Sjr_Block extends Thread
       yield();
     }
     paddleSize--;
-    if (paddleSize < 3)
+    if (paddleSize < MIN_PADDLESIZE)
     {
-      paddleSize = 5;
+      paddleSize = DEFAULT_PADDLESIZE;
       gameSpeed--;
     }
-    if (gameSpeed < 1)
+    if (gameSpeed < MIN_GAMESPEED)
     {
-      gameSpeed = 1;
+      gameSpeed = MIN_GAMESPEED;
     }
     gameStart();
   }
@@ -497,10 +509,10 @@ public class Sjr_Block extends Thread
 
       if (stageState == STATE_GAMEOVER)
       {
-        gameSpeed = 4;
-        paddleSize = 5;
+        gameSpeed = DEFAULT_GAMESPEED;
+        paddleSize = DEFAULT_PADDLESIZE;
         rand();
-        if ((boardKey.data & 2) == 2)
+        if ((boardKey.data & BOARD_KEY1) == BOARD_KEY1)
         {
           // clear score
           stageScore = 0;

@@ -161,6 +161,7 @@ module sjr_block_de0_cv
      .class_obj_0000_class_vram_0013_ext_resetv_exp_exp (resetv),
      .class_obj_0000_class_vram_0013_ext_vga_hs_exp_exp (VGA_HS),
      .class_obj_0000_class_vram_0013_ext_vga_vs_exp_exp (VGA_VS),
+     .class_obj_0000_class_vram_0013_ext_vga_de_exp_exp (),
      .class_obj_0000_class_vram_0013_ext_vga_r_exp_exp (VGA_R_in),
      .class_obj_0000_class_vram_0013_ext_vga_g_exp_exp (VGA_G_in),
      .class_obj_0000_class_vram_0013_ext_vga_b_exp_exp (VGA_B_in),

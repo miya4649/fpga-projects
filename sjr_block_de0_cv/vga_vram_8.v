@@ -30,6 +30,7 @@ module vga_vram_8
    input                    ext_resetv,
    output                   ext_vga_hs,
    output                   ext_vga_vs,
+   output                   ext_vga_de,
    output signed [8-1 : 0]  ext_vga_r,
    output signed [8-1 : 0]  ext_vga_g,
    output signed [8-1 : 0]  ext_vga_b
@@ -136,6 +137,7 @@ module vga_vram_8
   assign ext_vga_b = pixel_valid_delay[1] ? {vram_odata[1:0], 2'b0} : 4'd0;
   assign ext_vga_hs = vga_hs_delay[1];
   assign ext_vga_vs = vga_vs_delay[1];
+  assign ext_vga_de = pixel_valid_delay[1];
 
   // VRAM
   wire [7:0]  vram_idata;
