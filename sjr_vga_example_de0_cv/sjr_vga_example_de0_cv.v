@@ -27,18 +27,27 @@ module sjr_vga_example_de0_cv
   wire          clk_video;
   wire          clk_audio;
 
-  reg           areset;
-  reg           aresetv;
+  // main
+  wire          main_busy;
+  wire          main_req;
+  assign main_req = 1'b1;
 
   // synchronize reset
+  reg           areset;
+  reg           aresetv;
+  reg           areset1;
+  reg           aresetv1;
+
   always @(posedge CLOCK_50)
     begin
-      areset <= ~KEY[0];
+      areset1 <= ~KEY[0];
+      areset <= areset1;
     end
 
   always @(posedge clk_video)
     begin
-      aresetv <= ~KEY[0];
+      aresetv1 <= ~KEY[0];
+      aresetv <= aresetv1;
     end
 
 
@@ -59,9 +68,12 @@ module sjr_vga_example_de0_cv
      .class_obj_0000_class_vram_0000_ext_resetv_exp_exp (aresetv),
      .class_obj_0000_class_vram_0000_ext_vga_hs_exp_exp (VGA_HS),
      .class_obj_0000_class_vram_0000_ext_vga_vs_exp_exp (VGA_VS),
+     .class_obj_0000_class_vram_0000_ext_vga_de_exp_exp (),
      .class_obj_0000_class_vram_0000_ext_vga_r_exp_exp (VGA_R),
      .class_obj_0000_class_vram_0000_ext_vga_g_exp_exp (VGA_G),
      .class_obj_0000_class_vram_0000_ext_vga_b_exp_exp (VGA_B)
+     // .main_busy (main_busy),
+     // .main_req (main_req)
      );
 
 endmodule

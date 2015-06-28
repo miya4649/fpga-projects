@@ -55,6 +55,7 @@ public class VgaVram8 extends HDLModule
     newPort("ext_resetv", DIR.IN, HDLPrimitiveType.genBitType(), EnumSet.of(HDLPort.OPTION.EXPORT));
     newPort("ext_vga_hs", DIR.OUT, HDLPrimitiveType.genBitType(), EnumSet.of(HDLPort.OPTION.EXPORT));
     newPort("ext_vga_vs", DIR.OUT, HDLPrimitiveType.genBitType(), EnumSet.of(HDLPort.OPTION.EXPORT));
+    newPort("ext_vga_de", DIR.OUT, HDLPrimitiveType.genBitType(), EnumSet.of(HDLPort.OPTION.EXPORT));
     newPort("ext_vga_r", DIR.OUT, HDLPrimitiveType.genSignedType(8), EnumSet.of(HDLPort.OPTION.EXPORT));
     newPort("ext_vga_g", DIR.OUT, HDLPrimitiveType.genSignedType(8), EnumSet.of(HDLPort.OPTION.EXPORT));
     newPort("ext_vga_b", DIR.OUT, HDLPrimitiveType.genSignedType(8), EnumSet.of(HDLPort.OPTION.EXPORT));

@@ -30,6 +30,7 @@ module vga_vram_8
    input                    ext_resetv,
    output                   ext_vga_hs,
    output                   ext_vga_vs,
+   output                   ext_vga_de,
    output signed [8-1 : 0]  ext_vga_r,
    output signed [8-1 : 0]  ext_vga_g,
    output signed [8-1 : 0]  ext_vga_b
@@ -136,6 +137,7 @@ module vga_vram_8
   assign ext_vga_b = pixel_valid_delay[1] ? {vram_odata[1:0], 2'b0} : 4'd0;
   assign ext_vga_hs = vga_hs_delay[1];
   assign ext_vga_vs = vga_vs_delay[1];
+  assign ext_vga_de = pixel_valid_delay[1];
 
   // VRAM
   wire [7:0]  vram_idata;
@@ -178,7 +180,7 @@ module vga_vram_8
     (
      .clk_in (clk),
      .clk_out (ext_clkv),
-     .data_in (offset_h),
+     .data_in (offset_h[C_OFFSET_WIDTH-1:0]),
      .data_out (offset_h_sync),
      .reset_in (reset)
      );
@@ -191,7 +193,7 @@ module vga_vram_8
     (
      .clk_in (clk),
      .clk_out (ext_clkv),
-     .data_in (offset_v),
+     .data_in (offset_v[C_OFFSET_WIDTH-1:0]),
      .data_out (offset_v_sync),
      .reset_in (reset)
      );
@@ -208,38 +210,6 @@ module vga_vram_8
      .data_out (vsync),
      .reset_in (ext_resetv)
      );
-endmodule
-
-
-module dual_port_ram
-  #(
-    parameter DATA_WIDTH=8,
-    parameter ADDR_WIDTH=12
-    )
-  (
-   input [(DATA_WIDTH-1):0]      data_in,
-   input [(ADDR_WIDTH-1):0]      read_addr,
-   input [(ADDR_WIDTH-1):0]      write_addr,
-   input                         we,
-   input                         read_clock,
-   input                         write_clock,
-   output reg [(DATA_WIDTH-1):0] data_out
-   );
-
-  reg [DATA_WIDTH-1:0]           ram[(1 << ADDR_WIDTH)-1:0];
-
-  always @(posedge read_clock)
-    begin
-      data_out <= ram[read_addr];
-    end
-
-  always @(posedge write_clock)
-    begin
-      if (we)
-        begin
-          ram[write_addr] <= data_in;
-        end
-    end
 endmodule
 
 

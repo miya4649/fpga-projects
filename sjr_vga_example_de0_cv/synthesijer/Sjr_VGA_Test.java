@@ -147,6 +147,10 @@ public class Sjr_VGA_Test extends Thread
       {
         yield();
       }
+      while (vram.vsync == false)
+      {
+        yield();
+      }
       draw_cells();
       int p = calc_page;
       calc_page = draw_page;
