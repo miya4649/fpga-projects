@@ -42,39 +42,41 @@ module cdc_fifo
   endfunction
 
   // -------- clock domain: read  --------
-  reg [ADDR_WIDTH-1:0] addr_r_cr = 1'd0;
-  wire [ADDR_WIDTH-1:0] addr_r_gray_cr;
+  reg  [ADDR_WIDTH-1:0] addr_r_cr = 1'd0;
+  reg [ADDR_WIDTH-1:0]  addr_r_gray_cr = 1'd0;
+  wire [ADDR_WIDTH-1:0] addr_r_next_cr;
   wire [ADDR_WIDTH-1:0] addr_w_sync_cr;
+  assign addr_r_next_cr = addr_r_cr + 1'd1;
   assign empty_cr = (addr_r_gray_cr == addr_w_sync_cr) ? 1'b1 : 1'b0;
-  assign addr_r_gray_cr = bin2gray(addr_r_cr);
 
   always @(posedge clk_cr)
     begin
       if ((req_cr == 1'b1) && (empty_cr == 1'b0))
         begin
-          addr_r_cr <= addr_r_cr + 1'd1;
+          addr_r_cr <= addr_r_next_cr;
+          addr_r_gray_cr <= bin2gray(addr_r_next_cr);
         end
     end
 
   // -------- clock domain: write --------
-  reg [ADDR_WIDTH-1:0] addr_w_cw = 1'd0;
+  reg  [ADDR_WIDTH-1:0] addr_w_cw = 1'd0;
   wire [ADDR_WIDTH-1:0] addr_w_next_gray_cw;
   wire [ADDR_WIDTH-1:0] addr_r_gray_cw;
   wire                  we_cw;
   wire [ADDR_WIDTH-1:0] addr_w_next_cw;
   wire [ADDR_WIDTH-1:0] addr_r_sync_cw;
-  wire [ADDR_WIDTH-1:0] addr_w_gray_cw;
+  reg [ADDR_WIDTH-1:0]  addr_w_gray_cw = 1'd0;
   assign addr_w_next_cw = addr_w_cw + 1'd1;
   assign full_cw = (addr_w_next_gray_cw == addr_r_sync_cw) ? 1'b1 : 1'b0;
   assign we_cw = ((req_cw == 1'b1) && (full_cw == 1'b0)) ? 1'b1 : 1'b0;
   assign addr_w_next_gray_cw = bin2gray(addr_w_next_cw);
-  assign addr_w_gray_cw = bin2gray(addr_w_cw);
 
   always @(posedge clk_cw)
     begin
       if (we_cw == 1'b1)
         begin
           addr_w_cw <= addr_w_next_cw;
+          addr_w_gray_cw <= addr_w_next_gray_cw;
         end
     end
 
