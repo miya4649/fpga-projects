@@ -13,9 +13,7 @@ https://parts.arrow.com/item/detail/arrow-development-tools/bemicromax10
 のp.5を参照してVCCIO選択ジャンパ (J1,J9)が3.3V側に設定されていることを確認してください。
 
 ●ピンアサインについて
-IO_STANDARDはほとんど3.3-V LVTTLに設定してありますが以下のピンは2.5Vに設定しています。
-ADT7420, GPIO_J4, I2C, EGの一部, SFLASH, USER_LED
-PB（タクトスイッチ）は2.5 V SCHMITT TRIGGERです。
+IO_STANDARDはほとんど3.3-V LVTTLに設定してありますが PB（タクトスイッチ）は3.3 V SCHMITT TRIGGERです。
 
 ●ビルド方法
 Linux上でのビルドを想定しています。Quartus IIをUbuntuに導入する方法については以下のページを参考にしてください。
