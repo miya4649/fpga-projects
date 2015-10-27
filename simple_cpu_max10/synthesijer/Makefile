@@ -5,7 +5,7 @@ SYNTHESIJER?=$(SJR)
 SYNTHESIJER_LIB?=$(SJRLIB)
 SYNTHESIJER_EXTRA_LIB?=$(SJREXTLIB)
 CLASSPATH=$(SYNTHESIJER):$(SYNTHESIJER_EXTRA_LIB)/bin:.
-LIB_SJR_VERILOG=../singleportram.v
+LIB_SJR_VERILOG=../singleportram.v ../synthesijer_arith_rshift32.v ../synthesijer_lshift32.v ../synthesijer_logic_rshift32.v ../synthesijer_mul32.v
 
 SOURCES=SimpleCPU.java RedLED.java
 HDLFILES=*.v
@@ -17,6 +17,10 @@ all: $(SOURCES) $(LIB_SJR_VERILOG)
 
 $(LIB_SJR_VERILOG):
 	cp $(SYNTHESIJER_LIB)/verilog/singleportram.v ../
+	cp $(SYNTHESIJER_LIB)/verilog/synthesijer_arith_rshift32.v ../
+	cp $(SYNTHESIJER_LIB)/verilog/synthesijer_lshift32.v ../
+	cp $(SYNTHESIJER_LIB)/verilog/synthesijer_logic_rshift32.v ../
+	cp $(SYNTHESIJER_LIB)/verilog/synthesijer_mul32.v ../
 
 sim: $(SOURCES)
 	javac -cp $(CLASSPATH) SimpleCPU.java SimTop.java

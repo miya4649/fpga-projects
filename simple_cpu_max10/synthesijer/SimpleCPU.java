@@ -15,6 +15,7 @@
 
 /*
 命令一覧
+halt
 nop
 add
 sub
@@ -35,21 +36,49 @@ cgt: compare grater than
 bc: branch condition
 br: branch relative
 ba: branch absolute
+オプションの追加命令
 in
 out
+mul
 
 命令エンコード仕様
-im: 即値(3,6,16bit unsigned, 22bit signed)
+im: unsigned 即値 3,6,16bit
+ims: signed 即値 13,22bit
 op: オペコード
 reg_d: destination register address
 reg_a: register a address
 reg_b: register b address
 オペランドのビット幅
 31-------------------------------------0
-reg_d:6 reg_a:6 reg_b:6 none:4 im:3 op:7
-reg_d:6 reg_a:6 none:7 im:6 op:7
+add,sub,and,or,xor,mv,ceq,cgt,mul
+reg_d:6 reg_a:6 reg_b:6 none:7 op:7
+
+not
+reg_d:6 reg_a:6 none:13 op:7
+
+sr,sl,sra
+reg_d:6 reg_a:6 none:8 im:5 op:7
+
+ld,st
+reg_d:6 reg_a:6 ims:13 op:7
+
+mvi,mvih
 reg_d:6 none:3 im:16 op:7
-ims:22 im:3 op:7
+
+bc
+reg_d:6 ims:19 op:7
+
+br
+none:6 ims:19 op:7
+
+ba,out
+none:6 reg_a:6 none:13 op:7
+
+nop
+none:25 op:7
+
+in
+reg_d:6 none:19 op:7
  */
 
 
@@ -69,56 +98,50 @@ public class SimpleCPU
   private int reg_d;
   // プログラム・カウンター
   private int pc;
-  // フラグ
-  private boolean f_zero;
-  private boolean f_negative;
   // 入出力ポート
   private int port_out;
   private int port_in;
 
   // オペコード
-  private final int I_NOP = 0;
-  private final int I_BR = 1;
-  private final int I_MVI = 2;
-  private final int I_ADD = 3;
-  private final int I_OUT = 4;
+  private static final int I_HALT = 0;
+  private static final int I_ADD = 1;
+  private static final int I_SUB = 2;
+  private static final int I_AND = 3;
+  private static final int I_OR = 4;
+  private static final int I_XOR = 5;
+  private static final int I_NOT = 6;
+  private static final int I_LD = 7;
+  private static final int I_ST = 8;
+  private static final int I_MV = 9;
+  private static final int I_MVI = 10;
+  private static final int I_MVIH = 11;
+  private static final int I_SR = 12;
+  private static final int I_SL = 13;
+  private static final int I_SRA = 14;
+  private static final int I_CEQ = 15;
+  private static final int I_CGT = 16;
+  private static final int I_BC = 17;
+  private static final int I_BR = 18;
+  private static final int I_BA = 19;
+  private static final int I_NOP = 20;
+  // オプションの追加命令
+  private static final int I_IN = 21;
+  private static final int I_OUT = 22;
+  private static final int I_MUL = 23;
 
-
-  // アセンブラ（仮）
-  private int as_br(int add_pc)
-  {
-    return (add_pc << 10) | I_BR;
-  }
-
-  private int as_mvi(int reg_d, int value)
-  {
-    return (reg_d << 26) | (value << 7) | I_MVI;
-  }
-
-  private int as_add(int reg_d, int reg_a, int reg_b)
-  {
-    return (reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_ADD;
-  }
-
-  private int as_out(int reg_a)
-  {
-    return (reg_a << 20) | I_OUT;
-  }
 
   private void init()
   {
     pc = 0;
-    f_zero = false;
-    f_negative = false;
     reg_d = 0;
 
     // プログラム
     // カウントアップしてその値をI/Oポートに出力
-    mem_i[0] = as_mvi(0, 0);
-    mem_i[1] = as_mvi(1, 1);
-    mem_i[2] = as_add(0, 0, 1);
-    mem_i[3] = as_out(0);
-    mem_i[4] = as_br(-2);
+    mem_i[0x0000] = 0x0000000a;
+    mem_i[0x0001] = 0x0400008a;
+    mem_i[0x0002] = 0x00004001;
+    mem_i[0x0003] = 0x00000016;
+    mem_i[0x0004] = 0x03ffff12;
   }
 
   @auto
@@ -131,37 +154,148 @@ public class SimpleCPU
       // フェッチ
       int inst = mem_i[pc];
       // デコード
-      int op = inst & 0x0f;
-      int im = (inst >>> 7);
+      int op = inst & 0x7f;
+      int im = inst >>> 7;
       int im16 = im & 0xffff;
       int im5 = im & 0x1f;
-      int im3 = im & 0x7;
-      int ims22 = inst >> 10;
+      int ims13 = (inst << 12) >> 19;
+      int ims19 = (inst << 6) >> 13;
       int rd_addr = inst >>> 26;
       int ra_addr = (inst >>> 20) & 0x3f;
       int rb_addr = (inst >>> 14) & 0x3f;
       //debug
-      //System.out.printf("pc:%d inst:%x r0:%d r1:%d r2:%d \n", pc, inst, reg[0], reg[1], reg[2]);
+      ///System.out.printf("pc:%d inst:%x op:%d r0:%d r1:%d r2:%d r3:%d\n", pc, inst, op, reg[0], reg[1], reg[2], reg[3]);
       // 実行
       switch (op)
       {
-        case I_NOP:
-          pc++;
-          break;
-        case I_BR:
-          pc += ims22;
-          break;
-        case I_MVI:
-          reg[rd_addr] = im16;
-          pc++;
+        case I_HALT:
+          //debug
+          //System.exit(0);
           break;
         case I_ADD:
           reg_d = reg[ra_addr] + reg[rb_addr];
           reg[rd_addr] = reg_d;
           pc++;
           break;
+        case I_SUB:
+          reg_d = reg[ra_addr] - reg[rb_addr];
+          reg[rd_addr] = reg_d;
+          pc++;
+          break;
+        case I_AND:
+          reg_d = reg[ra_addr] & reg[rb_addr];
+          reg[rd_addr] = reg_d;
+          pc++;
+          break;
+        case I_OR:
+          reg_d = reg[ra_addr] | reg[rb_addr];
+          reg[rd_addr] = reg_d;
+          pc++;
+          break;
+        case I_XOR:
+          reg_d = reg[ra_addr] ^ reg[rb_addr];
+          reg[rd_addr] = reg_d;
+          pc++;
+          break;
+        case I_NOT:
+          reg_d = ~reg[ra_addr];
+          reg[rd_addr] = reg_d;
+          pc++;
+          break;
+        case I_LD:
+          reg_d = mem_d[reg[ra_addr] + ims13];
+          reg[rd_addr] = reg_d;
+          pc++;
+          break;
+        case I_ST:
+          mem_d[reg[ra_addr] + ims13] = reg[rd_addr];
+          pc++;
+          break;
+        case I_MV:
+          if ((reg[rb_addr] & 1) == 1)
+          {
+            reg_d = reg[ra_addr];
+            reg[rd_addr] = reg_d;
+          }
+          pc++;
+          break;
+        case I_MVI:
+          reg[rd_addr] = im16;
+          pc++;
+          break;
+        case I_MVIH:
+          reg_d = reg[rd_addr];
+          reg[rd_addr] = (im16 << 16) | reg_d;
+          pc++;
+          break;
+        case I_SR:
+          reg_d = reg[ra_addr] >>> im5;
+          reg[rd_addr] = reg_d;
+          pc++;
+          break;
+        case I_SL:
+          reg_d = reg[ra_addr] << im5;
+          reg[rd_addr] = reg_d;
+          pc++;
+          break;
+        case I_SRA:
+          reg_d = reg[ra_addr] >> im5;
+          reg[rd_addr] = reg_d;
+          pc++;
+          break;
+        case I_CEQ:
+          if (reg[ra_addr] == reg[rb_addr])
+          {
+            reg[rd_addr] = 0xffffffff;
+          }
+          else
+          {
+            reg[rd_addr] = 0;
+          }
+          pc++;
+          break;
+        case I_CGT:
+          if (reg[ra_addr] > reg[rb_addr])
+          {
+            reg[rd_addr] = 0xffffffff;
+          }
+          else
+          {
+            reg[rd_addr] = 0;
+          }
+          pc++;
+          break;
+        case I_BC:
+          if ((reg[rd_addr] & 1) == 1)
+          {
+            pc += ims19;
+          }
+          else
+          {
+            pc++;
+          }
+          break;
+        case I_BR:
+          pc += ims19;
+          break;
+        case I_BA:
+          pc = reg[ra_addr];
+          break;
+        case I_NOP:
+          pc++;
+          break;
+          // ---オプション命令---
+        case I_IN:
+          reg[rd_addr] = port_in;
+          pc++;
+          break;
         case I_OUT:
           port_out = reg[ra_addr];
+          pc++;
+          break;
+        case I_MUL:
+          reg_d = reg[ra_addr] * reg[rb_addr];
+          reg[rd_addr] = reg_d;
           pc++;
           break;
         default:
