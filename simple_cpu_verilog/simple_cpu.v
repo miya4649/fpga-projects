@@ -319,7 +319,7 @@ module simple_cpu
                         end
                       I_MUL:
                         begin
-                          reg_file[reg_d_addr] <= reg_file[reg_a_addr] * reg_file[reg_b_addr];
+                          reg_file[reg_d_addr] <= $signed(reg_file[reg_a_addr]) * $signed(reg_file[reg_b_addr]);
                         end
                       default: ;
                     endcase

@@ -6,6 +6,7 @@ set_global_assignment -name PROJECT_CREATION_TIME_DATE "22:17:43  AUGUST 05, 201
 set_global_assignment -name LAST_QUARTUS_VERSION 15.0.2
 
 set_global_assignment -name OPTIMIZATION_MODE "HIGH PERFORMANCE EFFORT"
+set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "SINGLE IMAGE WITH ERAM"
 set_global_assignment -name VERILOG_FILE ../single_port_ram.v
 set_global_assignment -name VERILOG_FILE ../simple_cpu.v
 set_global_assignment -name VERILOG_FILE ../rom.v

@@ -118,12 +118,12 @@ public class Asm
 
   private void as_mvi(int reg_d, int value)
   {
-    print_binary((reg_d << 26) | (value << 7) | I_MVI);
+    print_binary((reg_d << 26) | ((value & 0xffff) << 7) | I_MVI);
   }
 
   private void as_mvih(int reg_d, int value)
   {
-    print_binary((reg_d << 26) | (value << 7) | I_MVIH);
+    print_binary((reg_d << 26) | ((value & 0xffff) << 7) | I_MVIH);
   }
 
   private void as_sr(int reg_d, int reg_a, int value)
