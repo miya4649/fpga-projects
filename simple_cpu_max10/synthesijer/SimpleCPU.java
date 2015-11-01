@@ -42,8 +42,8 @@ out
 mul
 
 命令エンコード仕様
-im: unsigned 即値 3,6,16bit
-ims: signed 即値 13,22bit
+im: unsigned 即値 5,16bit
+ims: signed 即値 13,19bit
 op: オペコード
 reg_d: destination register address
 reg_a: register a address
@@ -94,40 +94,40 @@ public class SimpleCPU
   // データ・メモリー
   private final int[] mem_d = new int[256];
   // レジスタファイル
-  private final int[] reg = new int[64];
+  private final int[] reg = new int[16];
   private int reg_d;
   // プログラム・カウンター
   private int pc;
   // 入出力ポート
-  private int port_out;
-  private int port_in;
+  public int port_out;
+  public int port_in;
 
   // オペコード
-  private static final int I_HALT = 0;
-  private static final int I_ADD = 1;
-  private static final int I_SUB = 2;
-  private static final int I_AND = 3;
-  private static final int I_OR = 4;
-  private static final int I_XOR = 5;
-  private static final int I_NOT = 6;
-  private static final int I_LD = 7;
-  private static final int I_ST = 8;
-  private static final int I_MV = 9;
-  private static final int I_MVI = 10;
-  private static final int I_MVIH = 11;
-  private static final int I_SR = 12;
-  private static final int I_SL = 13;
-  private static final int I_SRA = 14;
-  private static final int I_CEQ = 15;
-  private static final int I_CGT = 16;
-  private static final int I_BC = 17;
-  private static final int I_BR = 18;
-  private static final int I_BA = 19;
-  private static final int I_NOP = 20;
-  // オプションの追加命令
-  private static final int I_IN = 21;
-  private static final int I_OUT = 22;
-  private static final int I_MUL = 23;
+  private static final int I_HALT = 0x00;
+  private static final int I_LD   = 0x01;
+  private static final int I_ST   = 0x02;
+  private static final int I_BC   = 0x03;
+  private static final int I_BR   = 0x04;
+  private static final int I_BA   = 0x05;
+  // 1 cycle instructions
+  private static final int I_NOP  = 0x40;
+  private static final int I_ADD  = 0x41;
+  private static final int I_SUB  = 0x42;
+  private static final int I_AND  = 0x43;
+  private static final int I_OR   = 0x44;
+  private static final int I_XOR  = 0x45;
+  private static final int I_NOT  = 0x46;
+  private static final int I_MV   = 0x47;
+  private static final int I_MVI  = 0x48;
+  private static final int I_MVIH = 0x49;
+  private static final int I_SR   = 0x4a;
+  private static final int I_SL   = 0x4b;
+  private static final int I_SRA  = 0x4c;
+  private static final int I_CEQ  = 0x4d;
+  private static final int I_CGT  = 0x4e;
+  private static final int I_IN   = 0x4f;
+  private static final int I_OUT  = 0x50;
+  private static final int I_MUL  = 0x51;
 
 
   private void init()
@@ -137,32 +137,33 @@ public class SimpleCPU
 
     // プログラム
     // カウントアップしてその値をI/Oポートに出力
-    mem_i[0x0000] = 0x0000000a;
-    mem_i[0x0001] = 0x0400008a;
-    mem_i[0x0002] = 0x00004001;
-    mem_i[0x0003] = 0x00000016;
-    mem_i[0x0004] = 0x03ffff12;
+    mem_i[0x0000] = 0x00000048;
+    mem_i[0x0001] = 0x040000c8;
+    mem_i[0x0002] = 0x00004041;
+    mem_i[0x0003] = 0x00000050;
+    mem_i[0x0004] = 0x0bffff04;
   }
 
   @auto
   public void run()
   {
+    int inst, op, im, im5, im16, ims13, ims19, rd_addr, ra_addr, rb_addr;
     init();
 
     while (true)
     {
       // フェッチ
-      int inst = mem_i[pc];
+      inst = mem_i[pc];
       // デコード
-      int op = inst & 0x7f;
-      int im = inst >>> 7;
-      int im16 = im & 0xffff;
-      int im5 = im & 0x1f;
-      int ims13 = (inst << 12) >> 19;
-      int ims19 = (inst << 6) >> 13;
-      int rd_addr = inst >>> 26;
-      int ra_addr = (inst >>> 20) & 0x3f;
-      int rb_addr = (inst >>> 14) & 0x3f;
+      op = inst & 0x7f;
+      im = inst >>> 7;
+      im16 = im & 0xffff;
+      im5 = im & 0x1f;
+      ims13 = (inst << 12) >> 19;
+      ims19 = (inst << 6) >> 13;
+      rd_addr = (inst >>> 26) & 0x0f;
+      ra_addr = (inst >>> 20) & 0x0f;
+      rb_addr = (inst >>> 14) & 0x0f;
       //debug
       ///System.out.printf("pc:%d inst:%x op:%d r0:%d r1:%d r2:%d r3:%d\n", pc, inst, op, reg[0], reg[1], reg[2], reg[3]);
       // 実行
@@ -276,6 +277,7 @@ public class SimpleCPU
           }
           break;
         case I_BR:
+          reg[rd_addr] = pc + 1;
           pc += ims19;
           break;
         case I_BA:

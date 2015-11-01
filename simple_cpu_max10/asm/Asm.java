@@ -17,30 +17,31 @@ public class Asm
 {
   private int address;
   // オペコード
-  private static final int I_HALT = 0;
-  private static final int I_ADD = 1;
-  private static final int I_SUB = 2;
-  private static final int I_AND = 3;
-  private static final int I_OR = 4;
-  private static final int I_XOR = 5;
-  private static final int I_NOT = 6;
-  private static final int I_LD = 7;
-  private static final int I_ST = 8;
-  private static final int I_MV = 9;
-  private static final int I_MVI = 10;
-  private static final int I_MVIH = 11;
-  private static final int I_SR = 12;
-  private static final int I_SL = 13;
-  private static final int I_SRA = 14;
-  private static final int I_CEQ = 15;
-  private static final int I_CGT = 16;
-  private static final int I_BC = 17;
-  private static final int I_BR = 18;
-  private static final int I_BA = 19;
-  private static final int I_NOP = 20;
-  private static final int I_IN = 21;
-  private static final int I_OUT = 22;
-  private static final int I_MUL = 23;
+  private static final int I_HALT = 0x00;
+  private static final int I_LD   = 0x01;
+  private static final int I_ST   = 0x02;
+  private static final int I_BC   = 0x03;
+  private static final int I_BR   = 0x04;
+  private static final int I_BA   = 0x05;
+  // 1 cycle instructions
+  private static final int I_NOP  = 0x40;
+  private static final int I_ADD  = 0x41;
+  private static final int I_SUB  = 0x42;
+  private static final int I_AND  = 0x43;
+  private static final int I_OR   = 0x44;
+  private static final int I_XOR  = 0x45;
+  private static final int I_NOT  = 0x46;
+  private static final int I_MV   = 0x47;
+  private static final int I_MVI  = 0x48;
+  private static final int I_MVIH = 0x49;
+  private static final int I_SR   = 0x4a;
+  private static final int I_SL   = 0x4b;
+  private static final int I_SRA  = 0x4c;
+  private static final int I_CEQ  = 0x4d;
+  private static final int I_CGT  = 0x4e;
+  private static final int I_IN   = 0x4f;
+  private static final int I_OUT  = 0x50;
+  private static final int I_MUL  = 0x51;
 
 
   public void do_asm()
@@ -53,7 +54,7 @@ public class Asm
     as_mvi(1, 1);
     as_add(0, 0, 1);
     as_out(0);
-    as_br(-2);
+    as_br(2, -2);
   }
 
   private void print_binary(int binary)
@@ -100,11 +101,13 @@ public class Asm
 
   private void as_ld(int reg_d, int reg_a, int offset)
   {
+    // reg_file[reg_d] = mem_d[reg_file[reg_a] + offset]
     print_binary((reg_d << 26) | (reg_a << 20) | ((offset & 0x1fff) << 7) | I_LD);
   }
 
   private void as_st(int reg_d, int reg_a, int offset)
   {
+    // mem_d[reg_file[reg_a] + offset] = reg_file[reg_d]
     print_binary((reg_d << 26) | (reg_a << 20) | ((offset & 0x1fff) << 7) | I_ST);
   }
 
@@ -153,9 +156,9 @@ public class Asm
     print_binary((reg_d << 26) | ((offset & 0x7ffff) << 7) | I_BC);
   }
 
-  private void as_br(int offset)
+  private void as_br(int reg_d, int offset)
   {
-    print_binary(((offset & 0x7ffff) << 7) | I_BR);
+    print_binary((reg_d << 26) | ((offset & 0x7ffff) << 7) | I_BR);
   }
 
   private void as_ba(int reg_a)
