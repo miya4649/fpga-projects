@@ -21,7 +21,7 @@ public class Asm
   private static final int I_LD   = 0x01;
   private static final int I_ST   = 0x02;
   private static final int I_BC   = 0x03;
-  private static final int I_BR   = 0x04;
+  private static final int I_BL   = 0x04;
   private static final int I_BA   = 0x05;
   // 1 cycle instructions
   private static final int I_NOP  = 0x40;
@@ -39,9 +39,10 @@ public class Asm
   private static final int I_SRA  = 0x4c;
   private static final int I_CEQ  = 0x4d;
   private static final int I_CGT  = 0x4e;
-  private static final int I_IN   = 0x4f;
-  private static final int I_OUT  = 0x50;
-  private static final int I_MUL  = 0x51;
+  private static final int I_CGTA = 0x4f;
+  private static final int I_IN   = 0x50;
+  private static final int I_OUT  = 0x51;
+  private static final int I_MUL  = 0x52;
 
   private static final String header = "module rom\n"
     + "  (\n"
@@ -72,7 +73,7 @@ public class Asm
     as_mvi(1, 1);
     as_add(0, 0, 1);
     as_out(0);
-    as_br(2, -2);
+    as_bc(1, -2);
 
 
     while (address < 0x100)
@@ -151,19 +152,19 @@ public class Asm
     print_binary((reg_d << 26) | ((value & 0xffff) << 7) | I_MVIH);
   }
 
-  private void as_sr(int reg_d, int reg_a, int value)
+  private void as_sr(int reg_d, int reg_a, int reg_b)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | (value << 7) | I_SR);
+    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_SR);
   }
 
-  private void as_sl(int reg_d, int reg_a, int value)
+  private void as_sl(int reg_d, int reg_a, int reg_b)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | (value << 7) | I_SL);
+    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_SL);
   }
 
-  private void as_sra(int reg_d, int reg_a, int value)
+  private void as_sra(int reg_d, int reg_a, int reg_b)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | (value << 7) | I_SRA);
+    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_SRA);
   }
 
   private void as_ceq(int reg_d, int reg_a, int reg_b)
@@ -176,14 +177,19 @@ public class Asm
     print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_CGT);
   }
 
+  private void as_cgta(int reg_d, int reg_a, int reg_b)
+  {
+    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_CGTA);
+  }
+
   private void as_bc(int reg_d, int offset)
   {
     print_binary((reg_d << 26) | ((offset & 0x7ffff) << 7) | I_BC);
   }
 
-  private void as_br(int reg_d, int offset)
+  private void as_bl(int reg_d, int offset)
   {
-    print_binary((reg_d << 26) | ((offset & 0x7ffff) << 7) | I_BR);
+    print_binary((reg_d << 26) | ((offset & 0x7ffff) << 7) | I_BL);
   }
 
   private void as_ba(int reg_a)

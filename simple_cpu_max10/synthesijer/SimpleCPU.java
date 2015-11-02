@@ -33,8 +33,9 @@ sl: shift left
 sra: shift right arithmetic
 ceq: compare equal
 cgt: compare grater than
+cgta: compare grater than arithmetic
 bc: branch condition
-br: branch relative
+bl: branch link
 ba: branch absolute
 オプションの追加命令
 in
@@ -42,7 +43,7 @@ out
 mul
 
 命令エンコード仕様
-im: unsigned 即値 5,16bit
+im: unsigned 即値 16bit
 ims: signed 即値 13,19bit
 op: オペコード
 reg_d: destination register address
@@ -50,14 +51,11 @@ reg_a: register a address
 reg_b: register b address
 オペランドのビット幅
 31-------------------------------------0
-add,sub,and,or,xor,mv,ceq,cgt,mul
+add,sub,and,or,xor,mv,ceq,cgt,cgta,mul,sr,sl,sra
 reg_d:6 reg_a:6 reg_b:6 none:7 op:7
 
 not
 reg_d:6 reg_a:6 none:13 op:7
-
-sr,sl,sra
-reg_d:6 reg_a:6 none:8 im:5 op:7
 
 ld,st
 reg_d:6 reg_a:6 ims:13 op:7
@@ -65,11 +63,8 @@ reg_d:6 reg_a:6 ims:13 op:7
 mvi,mvih
 reg_d:6 none:3 im:16 op:7
 
-bc
+bc,bl
 reg_d:6 ims:19 op:7
-
-br
-none:6 ims:19 op:7
 
 ba,out
 none:6 reg_a:6 none:13 op:7
@@ -107,7 +102,7 @@ public class SimpleCPU
   private static final int I_LD   = 0x01;
   private static final int I_ST   = 0x02;
   private static final int I_BC   = 0x03;
-  private static final int I_BR   = 0x04;
+  private static final int I_BL   = 0x04;
   private static final int I_BA   = 0x05;
   // 1 cycle instructions
   private static final int I_NOP  = 0x40;
@@ -125,9 +120,10 @@ public class SimpleCPU
   private static final int I_SRA  = 0x4c;
   private static final int I_CEQ  = 0x4d;
   private static final int I_CGT  = 0x4e;
-  private static final int I_IN   = 0x4f;
-  private static final int I_OUT  = 0x50;
-  private static final int I_MUL  = 0x51;
+  private static final int I_CGTA = 0x4f;
+  private static final int I_IN   = 0x50;
+  private static final int I_OUT  = 0x51;
+  private static final int I_MUL  = 0x52;
 
 
   private void init()
@@ -140,14 +136,16 @@ public class SimpleCPU
     mem_i[0x0000] = 0x00000048;
     mem_i[0x0001] = 0x040000c8;
     mem_i[0x0002] = 0x00004041;
-    mem_i[0x0003] = 0x00000050;
-    mem_i[0x0004] = 0x0bffff04;
+    mem_i[0x0003] = 0x00000051;
+    mem_i[0x0004] = 0x07ffff03;
   }
 
   @auto
   public void run()
   {
-    int inst, op, im, im5, im16, ims13, ims19, rd_addr, ra_addr, rb_addr;
+    int inst, op, im, im16, ims13, ims19, rd_addr, ra_addr, rb_addr;
+    long tmp_a = 0L;
+    long tmp_b = 0L;
     init();
 
     while (true)
@@ -158,7 +156,6 @@ public class SimpleCPU
       op = inst & 0x7f;
       im = inst >>> 7;
       im16 = im & 0xffff;
-      im5 = im & 0x1f;
       ims13 = (inst << 12) >> 19;
       ims19 = (inst << 6) >> 13;
       rd_addr = (inst >>> 26) & 0x0f;
@@ -213,7 +210,7 @@ public class SimpleCPU
           pc++;
           break;
         case I_MV:
-          if ((reg[rb_addr] & 1) == 1)
+          if (reg[rb_addr] != 0)
           {
             reg_d = reg[ra_addr];
             reg[rd_addr] = reg_d;
@@ -230,17 +227,17 @@ public class SimpleCPU
           pc++;
           break;
         case I_SR:
-          reg_d = reg[ra_addr] >>> im5;
+          reg_d = reg[ra_addr] >>> reg[rb_addr];
           reg[rd_addr] = reg_d;
           pc++;
           break;
         case I_SL:
-          reg_d = reg[ra_addr] << im5;
+          reg_d = reg[ra_addr] << reg[rb_addr];
           reg[rd_addr] = reg_d;
           pc++;
           break;
         case I_SRA:
-          reg_d = reg[ra_addr] >> im5;
+          reg_d = reg[ra_addr] >> reg[rb_addr];
           reg[rd_addr] = reg_d;
           pc++;
           break;
@@ -256,6 +253,19 @@ public class SimpleCPU
           pc++;
           break;
         case I_CGT:
+          tmp_a = (long)reg[ra_addr] & 0x00000000ffffffffL;
+          tmp_b = (long)reg[rb_addr] & 0x00000000ffffffffL;
+          if (tmp_a > tmp_b)
+          {
+            reg[rd_addr] = 0xffffffff;
+          }
+          else
+          {
+            reg[rd_addr] = 0;
+          }
+          pc++;
+          break;
+        case I_CGTA:
           if (reg[ra_addr] > reg[rb_addr])
           {
             reg[rd_addr] = 0xffffffff;
@@ -267,16 +277,16 @@ public class SimpleCPU
           pc++;
           break;
         case I_BC:
-          if ((reg[rd_addr] & 1) == 1)
-          {
-            pc += ims19;
-          }
-          else
+          if (reg[rd_addr] == 0)
           {
             pc++;
           }
+          else
+          {
+            pc += ims19;
+          }
           break;
-        case I_BR:
+        case I_BL:
           reg[rd_addr] = pc + 1;
           pc += ims19;
           break;

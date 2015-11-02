@@ -61,7 +61,7 @@ module simple_cpu
   parameter I_LD   = 7'h01;
   parameter I_ST   = 7'h02;
   parameter I_BC   = 7'h03;
-  parameter I_BR   = 7'h04;
+  parameter I_BL   = 7'h04;
   parameter I_BA   = 7'h05;
   // 1 cycle
   parameter I_NOP  = 7'h40;
@@ -79,9 +79,10 @@ module simple_cpu
   parameter I_SRA  = 7'h4c;
   parameter I_CEQ  = 7'h4d;
   parameter I_CGT  = 7'h4e;
-  parameter I_IN   = 7'h4f;
-  parameter I_OUT  = 7'h50;
-  parameter I_MUL  = 7'h51;
+  parameter I_CGTA = 7'h4f;
+  parameter I_IN   = 7'h50;
+  parameter I_OUT  = 7'h51;
+  parameter I_MUL  = 7'h52;
 
   parameter TRUE = 1'b1;
   parameter FALSE = 1'b0;
@@ -111,7 +112,6 @@ module simple_cpu
   wire [5:0]           reg_d_addr;
   wire [5:0]           reg_a_addr;
   wire [5:0]           reg_b_addr;
-  wire [4:0]           im5;
   wire [15:0]          im16;
   wire signed [12:0]   ims13;
   wire signed [18:0]   ims19;
@@ -126,7 +126,6 @@ module simple_cpu
   assign reg_d_addr = inst[31:26];
   assign reg_a_addr = inst[25:20];
   assign reg_b_addr = inst[19:14];
-  assign im5 = inst[11:7];
   assign im16 = inst[22:7];
   assign ims13 = inst[19:7];
   assign ims19 = inst[25:7];
@@ -212,17 +211,17 @@ module simple_cpu
                         end
                       I_BC:
                         begin
-                          if (reg_file[reg_d_addr][0] == TRUE)
-                            begin
-                              mem_i_addr <= pc + ims19;
-                            end
-                          else
+                          if (reg_file[reg_d_addr] == ZERO)
                             begin
                               mem_i_addr <= pc + ONE;
                             end
+                          else
+                            begin
+                              mem_i_addr <= pc + ims19;
+                            end
                           fetch_valid <= FALSE;
                         end
-                      I_BR:
+                      I_BL:
                         begin
                           reg_file[reg_d_addr] <= pc + ONE;
                           mem_i_addr <= pc + ims19;
@@ -262,7 +261,7 @@ module simple_cpu
                         end
                       I_MV:
                         begin
-                          if (reg_file[reg_b_addr][0] == TRUE)
+                          if (reg_file[reg_b_addr] != ZERO)
                             begin
                               reg_file[reg_d_addr] <= reg_file[reg_a_addr];
                             end
@@ -277,15 +276,15 @@ module simple_cpu
                         end
                       I_SR:
                         begin
-                          reg_file[reg_d_addr] <= reg_file[reg_a_addr] >> im5;
+                          reg_file[reg_d_addr] <= reg_file[reg_a_addr] >> reg_file[reg_b_addr];
                         end
                       I_SL:
                         begin
-                          reg_file[reg_d_addr] <= reg_file[reg_a_addr] << im5;
+                          reg_file[reg_d_addr] <= reg_file[reg_a_addr] << reg_file[reg_b_addr];
                         end
                       I_SRA:
                         begin
-                          reg_file[reg_d_addr] <= reg_file[reg_a_addr] >>> im5;
+                          reg_file[reg_d_addr] <= reg_file[reg_a_addr] >>> reg_file[reg_b_addr];
                         end
                       I_CEQ:
                         begin
@@ -301,6 +300,17 @@ module simple_cpu
                       I_CGT:
                         begin
                           if (reg_file[reg_a_addr] > reg_file[reg_b_addr])
+                            begin
+                              reg_file[reg_d_addr] <= FFFF;
+                            end
+                          else
+                            begin
+                              reg_file[reg_d_addr] <= ZERO;
+                            end
+                        end
+                      I_CGTA:
+                        begin
+                          if ($signed(reg_file[reg_a_addr]) > $signed(reg_file[reg_b_addr]))
                             begin
                               reg_file[reg_d_addr] <= FFFF;
                             end

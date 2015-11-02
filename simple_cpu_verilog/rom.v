@@ -11,8 +11,8 @@ module rom
         8'h00: data_out <= 32'h00000048;
         8'h01: data_out <= 32'h040000c8;
         8'h02: data_out <= 32'h00004041;
-        8'h03: data_out <= 32'h00000050;
-        8'h04: data_out <= 32'h0bffff04;
+        8'h03: data_out <= 32'h00000051;
+        8'h04: data_out <= 32'h07ffff03;
         8'h05: data_out <= 32'h00000000;
         8'h06: data_out <= 32'h00000000;
         8'h07: data_out <= 32'h00000000;
