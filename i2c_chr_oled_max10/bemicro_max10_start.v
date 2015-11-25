@@ -51,13 +51,13 @@ module bemicro_max10_start
     (
      .clk (SYS_CLK),
      .reset (reset),
-     .class_i2c_if_0000_class_obj_0000_arst_i_exp_exp (1'b1),
-     .class_i2c_if_0000_class_obj_0000_scl_pad_i_exp_exp (scl_i),
-     .class_i2c_if_0000_class_obj_0000_scl_pad_o_exp_exp (scl_o),
-     .class_i2c_if_0000_class_obj_0000_scl_padoen_o_exp_exp (scl_oen),
-     .class_i2c_if_0000_class_obj_0000_sda_pad_i_exp_exp (sda_i),
-     .class_i2c_if_0000_class_obj_0000_sda_pad_o_exp_exp (sda_o),
-     .class_i2c_if_0000_class_obj_0000_sda_padoen_o_exp_exp (sda_oen)
+     .i2c_if_obj_arst_i_exp (1'b1),
+     .i2c_if_obj_scl_pad_i_exp (scl_i),
+     .i2c_if_obj_scl_pad_o_exp (scl_o),
+     .i2c_if_obj_scl_padoen_o_exp (scl_oen),
+     .i2c_if_obj_sda_pad_i_exp (sda_i),
+     .i2c_if_obj_sda_pad_o_exp (sda_o),
+     .i2c_if_obj_sda_padoen_o_exp (sda_oen)
      );
 
 endmodule

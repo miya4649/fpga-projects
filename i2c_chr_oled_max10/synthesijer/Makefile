@@ -12,7 +12,6 @@ HDLFILES=*.v
 all: $(SOURCES)
 	java -cp $(CLASSPATH) synthesijer.Main --chaining --operation-strength-reduction --verilog $(SOURCES)
 	cp $(HDLFILES) ../
-	python3 fix_sjr_top.py
 
 clean:
 	-rm -f *.class

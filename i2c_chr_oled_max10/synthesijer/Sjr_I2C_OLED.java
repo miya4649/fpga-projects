@@ -55,18 +55,18 @@ public class Sjr_I2C_OLED
     i2c_if.i2c_write(SLAVE_ADDR, COMMAND, (byte)0x01);
 
     // 文字データ書き込み
-    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)0x48); // H
-    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)0x65); // e
-    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)0x6c); // l
-    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)0x6c); // l
-    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)0x6f); // o
-    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)0x2c); // ,
-    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)0x77); // w
-    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)0x6f); // o
-    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)0x72); // r
-    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)0x6c); // l
-    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)0x64); // d
-    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)0x21); // !
+    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)'H');
+    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)'e');
+    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)'l');
+    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)'l');
+    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)'o');
+    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)',');
+    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)'w');
+    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)'o');
+    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)'r');
+    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)'l');
+    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)'d');
+    i2c_if.i2c_write(SLAVE_ADDR, DATA, (byte)'!');
 
     busy_wait(0x6000000);
 
