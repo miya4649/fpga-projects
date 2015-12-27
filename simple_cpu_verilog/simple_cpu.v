@@ -24,23 +24,6 @@ module simple_cpu
    output reg [31:0] port_out
    );
 
-  // don't remove
-  wire [WIDTH_REG-1:0] mon_reg0;
-  assign mon_reg0 = reg_file[0];
-  // debug
-  /*
-  wire [WIDTH_REG-1:0] mon_reg1;
-  wire [WIDTH_REG-1:0] mon_reg2;
-  wire [WIDTH_REG-1:0] mon_reg3;
-  wire [WIDTH_REG-1:0] mon_reg4;
-  wire [WIDTH_REG-1:0] mon_reg5;
-  assign mon_reg1 = reg_file[1];
-  assign mon_reg2 = reg_file[2];
-  assign mon_reg3 = reg_file[3];
-  assign mon_reg4 = reg_file[4];
-  assign mon_reg5 = reg_file[5];
-   */
-
   parameter WIDTH_I = 32;
   parameter WIDTH_D = 32;
   parameter WIDTH_REG = 32;
@@ -284,7 +267,7 @@ module simple_cpu
                         end
                       I_SRA:
                         begin
-                          reg_file[reg_d_addr] <= reg_file[reg_a_addr] >>> reg_file[reg_b_addr];
+                          reg_file[reg_d_addr] <= $signed(reg_file[reg_a_addr]) >>> reg_file[reg_b_addr];
                         end
                       I_CEQ:
                         begin
