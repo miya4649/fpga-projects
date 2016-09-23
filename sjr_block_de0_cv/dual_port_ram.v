@@ -28,7 +28,7 @@ module dual_port_ram
    output reg [(DATA_WIDTH-1):0] data_out
    );
 
-  reg [DATA_WIDTH-1:0]           ram[(1 << ADDR_WIDTH)-1:0];
+  reg [DATA_WIDTH-1:0]           ram [0:(1 << ADDR_WIDTH)-1];
 
   always @(posedge read_clock)
     begin
