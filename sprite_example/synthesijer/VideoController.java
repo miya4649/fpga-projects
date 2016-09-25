@@ -17,6 +17,13 @@ import synthesijer.rt.*;
 
 public class VideoController extends Thread
 {
+  private static final int SCREEN_SIZE_BITS = 6;
+  private static final int SCREEN_SIZE_BITS_X2 = (SCREEN_SIZE_BITS << 1);
+  private static final int SCREEN_SIZE = (1 << SCREEN_SIZE_BITS);
+  private static final int SCREEN_SIZE_M1 = (SCREEN_SIZE - 1);
+  private static final int SCREEN_SIZE2 = (1 << SCREEN_SIZE_BITS_X2);
+  private static final int LAYERS = 9;
+
   private final VgaIface vga = new VgaIface();
   private final Sprite sprite0 = new Sprite();
   private final Sprite sprite1 = new Sprite();
@@ -27,8 +34,6 @@ public class VideoController extends Thread
   private final Sprite sprite6 = new Sprite();
   private final SPThread1 spt0 = new SPThread1();
   private final BGThread bgt0 = new BGThread();
-
-  private static final int LAYERS = 9;
 
   private final int[] x = new int[LAYERS];
   private final int[] y = new int[LAYERS];
@@ -59,7 +64,7 @@ public class VideoController extends Thread
     spt0.start();
     bgt0.start();
 
-    for (int i = 0; i < 64 * 64; i++)
+    for (int i = 0; i < SCREEN_SIZE2; i++)
     {
       sprite0.bitmap[i] = (byte)0;
       sprite1.bitmap[i] = (byte)0;
@@ -70,10 +75,10 @@ public class VideoController extends Thread
       sprite6.bitmap[i] = (byte)0;
     }
 
-    for (int i = 0; i < 64; i++)
+    for (int i = 0; i < SCREEN_SIZE; i++)
     {
-      int p0 = (i << 6) + i;
-      int p1 = (i << 6) + (63 - i);
+      int p0 = (i << SCREEN_SIZE_BITS) + i;
+      int p1 = (i << SCREEN_SIZE_BITS) + (SCREEN_SIZE_M1 - i);
       sprite0.bitmap[p0] = (byte)(255 - i);
       sprite0.bitmap[p1] = (byte)(255 - i);
       sprite1.bitmap[p0] = (byte)(245 - i);
@@ -173,7 +178,7 @@ public class VideoController extends Thread
           scale[i] += scale_d[i];
         }
 
-        offset[i] = (64 << 7) >>> scale[i];
+        offset[i] = (SCREEN_SIZE << 7) >>> scale[i];
       }
     }
   }

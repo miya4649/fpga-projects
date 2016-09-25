@@ -16,6 +16,7 @@ set_global_assignment -name VERILOG_FILE ../audio_output.v
 set_global_assignment -name VERILOG_FILE ../board_key.v
 set_global_assignment -name VERILOG_FILE ../board_switch.v
 set_global_assignment -name VERILOG_FILE ../cdc_fifo.v
+set_global_assignment -name VERILOG_FILE ../cdc_synchronizer.v
 set_global_assignment -name VERILOG_FILE ../dual_port_ram.v
 set_global_assignment -name VERILOG_FILE ../hex_led.v
 set_global_assignment -name VERILOG_FILE ../red_led.v

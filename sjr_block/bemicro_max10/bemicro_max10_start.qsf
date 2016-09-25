@@ -15,6 +15,7 @@ set_global_assignment -name SDC_FILE bemicro_max10_start.sdc
 set_global_assignment -name VERILOG_FILE ../audio_output.v
 set_global_assignment -name VERILOG_FILE ../board_key.v
 set_global_assignment -name VERILOG_FILE ../cdc_fifo.v
+set_global_assignment -name VERILOG_FILE ../cdc_synchronizer.v
 set_global_assignment -name VERILOG_FILE ../dual_port_ram.v
 set_global_assignment -name VERILOG_FILE ../synchronizer.v
 set_global_assignment -name VERILOG_FILE ../vga_vram_8.v

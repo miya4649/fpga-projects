@@ -31,6 +31,8 @@ public class Sprite extends HDLModule
   {
     super("sprite", "clk", "reset");
 
+    newParameter("SPRITE_SIZE_BITS", 6);
+
     newPort("bitmap_length", DIR.OUT, HDLPrimitiveType.genSignedType(32));
     newPort("bitmap_address",DIR.IN, HDLPrimitiveType.genSignedType(32));
     newPort("bitmap_din",    DIR.IN, HDLPrimitiveType.genSignedType(8));

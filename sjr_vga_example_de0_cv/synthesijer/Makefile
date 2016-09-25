@@ -11,7 +11,6 @@ HDLFILES=*.v
 all: $(SOURCES) $(LIB_SJR_VERILOG)
 	java -cp $(CLASSPATH) synthesijer.Main --chaining --operation-strength-reduction --verilog $(SOURCES)
 	cp $(HDLFILES) ../
-	python3 fix_sjr_top.py
 
 $(LIB_SJR_VERILOG):
 	cp $(SYNTHESIJER_LIB)/verilog/singleportram.v ../

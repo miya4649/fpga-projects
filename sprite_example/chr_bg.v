@@ -14,6 +14,9 @@
 */
 
 module chr_bg
+  #(
+    parameter CHR_SIZE_BITS = 6
+    )
   (
    input                     clk,
    input                     reset,
@@ -46,11 +49,10 @@ module chr_bg
   localparam BPP = 8;
   localparam CHR_BITS = 8;
   localparam OFFSET_BITS = 16;
-  localparam ADDR_BITS = 12;
+  localparam ADDR_BITS = (CHR_SIZE_BITS * 2);
   localparam SCALE_BITS_BITS = 4;
   localparam SCALE_BITS = (1 << SCALE_BITS_BITS);
   localparam SCALE_DIV_BITS = 8;
-  localparam CHR_SIZE_BITS = (ADDR_BITS / 2);
   localparam CHR_SIZE = (1 << CHR_SIZE_BITS);
   localparam CHR_ROM_ADDR_BITS = 12;
   localparam CHR_ROM_DATA_BITS = 2;

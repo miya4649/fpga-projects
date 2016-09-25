@@ -106,8 +106,8 @@ public class BGThread extends Thread
 
   private void add_pixels(int page)
   {
-    int x1 = (rand() & 63);
-    int y1 = (rand() & 63);
+    int x1 = (rand() & SCREEN_SIZE_M1);
+    int y1 = (rand() & SCREEN_SIZE_M1);
     for (int y = 0; y < 5; y++)
     {
       for (int x = 0; x < 5; x++)

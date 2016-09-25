@@ -27,6 +27,8 @@ public class SPThread1 extends Thread
   private static final int TAIL_LENGTH = (1 << TAIL_LENGTH_BITS);
   private static final int TAIL_LENGTH_M1 = (TAIL_LENGTH - 1);
   private static final int TAIL_SIZE = (SNAKES * TAIL_LENGTH);
+  private static final int MAX_X = ((20 << (SCREEN_SIZE_BITS - 5)) - 1);
+  private static final int MAX_Y = ((15 << (SCREEN_SIZE_BITS - 5)) - 1);
   private int tailX[] = new int[TAIL_SIZE];
   private int tailY[] = new int[TAIL_SIZE];
   private final Sprite sprite = new Sprite();
@@ -55,7 +57,7 @@ public class SPThread1 extends Thread
   {
     sprite.x = 0;
     sprite.y = 0;
-    sprite.scale = 4;
+    sprite.scale = SCREEN_SIZE_BITS - 2;
     count = 0;
     dx[0] = 0;
     dx[1] = 1;
@@ -106,7 +108,7 @@ public class SPThread1 extends Thread
 
       x[i] += dx[dir[i]];
       y[i] += dy[dir[i]];
-      if ((x[i] < 0) || (x[i] > 39) || (y[i] < 0) || (y[i] > 29))
+      if ((x[i] < 0) || (x[i] > MAX_X) || (y[i] < 0) || (y[i] > MAX_Y))
       {
         dir[i] += 2;
         dir[i] = dir[i] & 3;

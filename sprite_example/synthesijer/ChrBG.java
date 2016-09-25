@@ -35,6 +35,8 @@ public class ChrBG extends HDLModule
   {
     super("chr_bg", "clk", "reset");
 
+    newParameter("CHR_SIZE_BITS", 6);
+
     newPort("chr_length", DIR.OUT, HDLPrimitiveType.genSignedType(32));
     newPort("chr_address",DIR.IN, HDLPrimitiveType.genSignedType(32));
     newPort("chr_din",    DIR.IN, HDLPrimitiveType.genSignedType(8));

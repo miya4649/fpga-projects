@@ -14,6 +14,9 @@
 */
 
 module sprite
+  #(
+    parameter SPRITE_SIZE_BITS = 6
+    )
   (
    input                     clk,
    input                     reset,
@@ -40,11 +43,10 @@ module sprite
   localparam VGA_HEIGHT = 480;
   localparam BPP = 8;
   localparam OFFSET_BITS = 16;
-  localparam ADDR_BITS = 12;
+  localparam ADDR_BITS = (SPRITE_SIZE_BITS * 2);
   localparam SCALE_BITS_BITS = 4;
   localparam SCALE_BITS = (1 << SCALE_BITS_BITS);
   localparam SCALE_DIV_BITS = 8;
-  localparam SPRITE_SIZE_BITS = (ADDR_BITS / 2);
   localparam SPRITE_SIZE = (1 << SPRITE_SIZE_BITS);
 
   // return const value
