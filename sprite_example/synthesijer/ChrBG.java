@@ -23,6 +23,7 @@ import synthesijer.hdl.HDLPrimitiveType;
 public class ChrBG extends HDLModule
 {
   public byte[] chr;
+  public byte[] bitmap;
   public int x;
   public int y;
   public int scale;
@@ -36,6 +37,7 @@ public class ChrBG extends HDLModule
     super("chr_bg", "clk", "reset");
 
     newParameter("CHR_SIZE_BITS", 6);
+    newParameter("BITMAP_BITS", 2);
 
     newPort("chr_length", DIR.OUT, HDLPrimitiveType.genSignedType(32));
     newPort("chr_address",DIR.IN, HDLPrimitiveType.genSignedType(32));
@@ -43,6 +45,13 @@ public class ChrBG extends HDLModule
     newPort("chr_dout",   DIR.OUT, HDLPrimitiveType.genSignedType(8));
     newPort("chr_we",     DIR.IN, HDLPrimitiveType.genBitType());
     newPort("chr_oe",     DIR.IN, HDLPrimitiveType.genBitType());
+
+    newPort("bitmap_length", DIR.OUT, HDLPrimitiveType.genSignedType(32));
+    newPort("bitmap_address",DIR.IN, HDLPrimitiveType.genSignedType(32));
+    newPort("bitmap_din",    DIR.IN, HDLPrimitiveType.genSignedType(8));
+    newPort("bitmap_dout",   DIR.OUT, HDLPrimitiveType.genSignedType(8));
+    newPort("bitmap_we",     DIR.IN, HDLPrimitiveType.genBitType());
+    newPort("bitmap_oe",     DIR.IN, HDLPrimitiveType.genBitType());
 
     newPort("x", DIR.IN, HDLPrimitiveType.genSignedType(32));
     newPort("y", DIR.IN, HDLPrimitiveType.genSignedType(32));

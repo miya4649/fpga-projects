@@ -535,6 +535,7 @@ public class MakeChrROM extends MakeROM
 
   public void make()
   {
-    writeVerilog("chr", data, 2);
+    writeVerilog("chr", data, 1);
+    writeJava("chr", "byte", data, 8);
   }
 }

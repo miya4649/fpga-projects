@@ -12,6 +12,8 @@ EXLIB_SJR_VERILOG=
 
 ROM_FILES=rom_chr.v
 
+ROM_SOURCES=MakeROM/*.java
+
 SOURCES=*.java
 
 
@@ -24,7 +26,7 @@ $(LIB_SJR_VERILOG):
 $(EXLIB_SJR_VERILOG):
 	cp $(SYNTHESIJER_EXTRA_LIB)/hdl_lib/verilog/$@ ./
 
-$(ROM_FILES):
+$(ROM_FILES): $(ROM_SOURCES)
 	make -C MakeROM
 
 clean:

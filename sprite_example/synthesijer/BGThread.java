@@ -24,7 +24,8 @@ public class BGThread extends Thread
   private static final int SCREEN_SIZE2 = (1 << SCREEN_SIZE_BITS_X2);
   private static final int CELL_SIZE = (SCREEN_SIZE2 << 1);
   private byte cell[] = new byte[CELL_SIZE];
-  private final ChrBG bg0 = new ChrBG();
+  private final ChrBG bg0 = new ChrBG("BITMAP_BITS", "1");
+  private final ROMchr rom = new ROMchr();
 
   private int random = -59634649;
   private int frame;
@@ -45,6 +46,11 @@ public class BGThread extends Thread
     bg0.palette1 = 0xffff1c00;
     bg0.palette2 = 0xffff0300;
     bg0.palette3 = 0xffffff00;
+
+    for (int i = 0; i < SCREEN_SIZE2; i++)
+    {
+      bg0.bitmap[i] = rom.data[i];
+    }
 
     for (int i = 0; i < CELL_SIZE; i++)
     {

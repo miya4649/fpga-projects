@@ -15,7 +15,8 @@
 
 module chr_bg
   #(
-    parameter CHR_SIZE_BITS = 6
+    parameter CHR_SIZE_BITS = 6,
+    parameter BITMAP_BITS = 2
     )
   (
    input                     clk,
@@ -27,6 +28,13 @@ module chr_bg
    output signed [8-1:0]     chr_dout,
    input                     chr_we,
    input                     chr_oe,
+
+   output signed [32-1:0]    bitmap_length,
+   input signed [32-1:0]     bitmap_address,
+   input signed [8-1:0]      bitmap_din,
+   output signed [8-1:0]     bitmap_dout,
+   input                     bitmap_we,
+   input                     bitmap_oe,
 
    input signed [32-1:0]     x,
    input signed [32-1:0]     y,
@@ -54,13 +62,15 @@ module chr_bg
   localparam SCALE_BITS = (1 << SCALE_BITS_BITS);
   localparam SCALE_DIV_BITS = 8;
   localparam CHR_SIZE = (1 << CHR_SIZE_BITS);
-  localparam CHR_ROM_ADDR_BITS = 12;
-  localparam CHR_ROM_DATA_BITS = 2;
-  localparam CHR_ROM_SIZE_BITS = 3;
+  localparam BITMAP_ADDR_BITS = 12;
+  localparam BITMAP_DATA_BITS = 2;
+  localparam BITMAP_SIZE_BITS = 3;
 
   // return const value
   assign chr_length = 1 << ADDR_BITS;
   assign chr_dout = 1'd0;
+  assign bitmap_length = 1 << ADDR_BITS;
+  assign bitmap_dout = 1'd0;
 
   // logic
   reg signed [OFFSET_BITS+SCALE_BITS-1:0] dx0_d1;
@@ -78,10 +88,10 @@ module chr_bg
   wire [INT_BITS-1:0]                     palette2_sync;
   wire [INT_BITS-1:0]                     palette3_sync;
   reg [SCALE_BITS_BITS-1:0]               scale_sync_d1;
-  reg [CHR_ROM_ADDR_BITS-1:0]             chr_rom_addr0_d3;
-  reg [CHR_ROM_ADDR_BITS-1:0]             chr_rom_addr0_d4;
-  reg [CHR_ROM_ADDR_BITS-1:0]             chr_rom_addr1_d5;
-  wire [CHR_ROM_DATA_BITS-1:0]            chr_rom_data_d6;
+  reg [BITMAP_ADDR_BITS-1:0]              bitmap_addr0_d3;
+  reg [BITMAP_ADDR_BITS-1:0]              bitmap_addr0_d4;
+  reg [BITMAP_ADDR_BITS-1:0]              bitmap_addr1_d5;
+  wire [BITMAP_DATA_BITS-1:0]             bitmap_data_d6;
 
   always @(posedge ext_clkv)
     begin
@@ -90,11 +100,11 @@ module chr_bg
       scale_sync_d1 <= scale_sync;
       dx1_d2 <= (dx0_d1 << scale_sync_d1) >> SCALE_DIV_BITS;
       dy1_d2 <= (dy0_d1 << scale_sync_d1) >> SCALE_DIV_BITS;
-      chr_raddr_d3 <= (dy1_d2[CHR_SIZE_BITS+CHR_ROM_SIZE_BITS-1:CHR_ROM_SIZE_BITS] << CHR_SIZE_BITS) + dx1_d2[CHR_SIZE_BITS+CHR_ROM_SIZE_BITS-1:CHR_ROM_SIZE_BITS];
-      chr_rom_addr0_d3 <= (dy1_d2[CHR_ROM_SIZE_BITS-1:0] << CHR_ROM_SIZE_BITS) + dx1_d2[CHR_ROM_SIZE_BITS-1:0];
-      chr_rom_addr0_d4 <= chr_rom_addr0_d3;
-      chr_rom_addr1_d5 <= (chr_name_d4 << (CHR_ROM_SIZE_BITS << 1)) + chr_rom_addr0_d4;
-      case ({chr_name_d6[7:6], chr_rom_data_d6})
+      chr_raddr_d3 <= (dy1_d2[CHR_SIZE_BITS+BITMAP_SIZE_BITS-1:BITMAP_SIZE_BITS] << CHR_SIZE_BITS) + dx1_d2[CHR_SIZE_BITS+BITMAP_SIZE_BITS-1:BITMAP_SIZE_BITS];
+      bitmap_addr0_d3 <= (dy1_d2[BITMAP_SIZE_BITS-1:0] << BITMAP_SIZE_BITS) + dx1_d2[BITMAP_SIZE_BITS-1:0];
+      bitmap_addr0_d4 <= bitmap_addr0_d3;
+      bitmap_addr1_d5 <= (chr_name_d4 << (BITMAP_SIZE_BITS << 1)) + bitmap_addr0_d4;
+      case ({chr_name_d6[7:6], bitmap_data_d6})
         // ext_color: 7 cycle delay
         4'b0000: ext_color <= palette0_sync[7:0];
         4'b0001: ext_color <= palette0_sync[15:8];
@@ -135,17 +145,21 @@ module chr_bg
      .data_out (chr_name_d4)
      );
 
-  // Character Generator ROM
-  rom_chr rom_chr_0
+  // Character Generator RAM
+  dual_port_ram
+    #(
+      .DATA_WIDTH (BITMAP_BITS),
+      .ADDR_WIDTH (ADDR_BITS)
+      )
+  dual_port_ram_1
     (
-     .clk (ext_clkv),
-     .reset (ext_resetv),
-     .data_address (chr_rom_addr1_d5),
-     .data_din (),
-     .data_dout (chr_rom_data_d6),
-     .data_oe (),
-     .data_we (),
-     .data_length ()
+     .data_in (bitmap_din),
+     .read_addr (bitmap_addr1_d5),
+     .write_addr (bitmap_address),
+     .we (bitmap_we),
+     .read_clock (ext_clkv),
+     .write_clock (clk),
+     .data_out (bitmap_data_d6)
      );
 
   cdc_synchronizer
