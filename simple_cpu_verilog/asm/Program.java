@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015, miya
+  Copyright (c) 2016, miya
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -13,46 +13,60 @@
   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-module bemicro_max10_start
-  (
-   input        SYS_CLK,
-   output [7:0] USER_LED,
-   input [3:0]  PB
-   );
+public class Program extends Asm
+{
+  // label
+  // value: 0 <= X < LABEL_SIZE (unique)
+  private static final int L_0 = 0;
+  private static final int L_1 = 1;
+  private static final int L_2 = 2;
+  private static final int L_3 = 3;
+  private static final int L_4 = 4;
+  private static final int L_5 = 5;
+  private static final int L_6 = 6;
+  private static final int L_7 = 7;
+  private static final int L_8 = 8;
+  private static final int L_9 = 9;
+  private static final int L_10 = 10;
+  private static final int L_11 = 11;
+  private static final int L_12 = 12;
 
-  // generate reset signal (push button 1)
-  wire   reset;
-  reg    reset_reg1;
-  reg    reset_reg2;
-  assign reset = reset_reg2;
+  private void example1()
+  {
+    // example1: simple counter
+    as_mvi(0, 0);
+    as_mvi(1, 1);
+    label(L_0);
+    as_add(0, 0, 1);
+    as_out(0);
+    as_bc(1, addr_rel(L_0));
+  }
 
-  always @(posedge SYS_CLK)
-    begin
-      reset_reg1 <= ~PB[0];
-      reset_reg2 <= reset_reg1;
-    end
+  private void example2()
+  {
+    // example2: counter with wait
+    as_mvi(0, 0);
+    as_mvi(1, 1);
+    label(L_0);
+    as_add(0, 0, 1);
+    as_out(0);
 
-  wire [31:0] led_n;
-  assign USER_LED = ~(led_n[7:0]);
+    // wait
+    as_mvi(2, 0);
+    as_mvi(3, 0);
+    as_mvih(3, 4);
+    label(L_1);
+    as_add(2, 2, 1);
+    as_cgt(4, 3, 2);
+    as_bc(4, addr_rel(L_1));
 
-  wire [7:0]  rom_addr;
-  wire [31:0] rom_data;
+    as_bc(1, addr_rel(L_0));
+  }
 
-  rom rom_0
-    (
-     .clk (SYS_CLK),
-     .addr (rom_addr),
-     .data_out (rom_data)
-     );
-
-  simple_cpu simple_cpu_0
-    (
-     .clk (SYS_CLK),
-     .reset (reset),
-     .rom_addr (rom_addr),
-     .rom_data (rom_data),
-     .port_in (32'd0),
-     .port_out (led_n)
-     );
-
-endmodule
+  @Override
+  public void program()
+  {
+    //example1();
+    example2();
+  }
+}

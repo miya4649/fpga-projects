@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015, miya
+  Copyright (c) 2015-2016, miya
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -13,66 +13,53 @@
   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-`timescale 1ns / 1ps
+module top
+  (
+   input        CLK,
+   output [7:0] LED
+   );
 
-module testbench;
-  parameter STEP = 20; // 20ナノ秒：50MHz
-  parameter TICKS = 4000;
+  localparam WIDTH_D = 32;
+  localparam WIDTH_REG = 32;
+  localparam DEPTH_I = 8;
+  localparam DEPTH_D = 8;
+  localparam RESET_TIMER_BIT = 24;
 
-  reg clkt;
-  reg reset;
-  wire [31:0] count;
+  wire [DEPTH_I-1:0] rom_addr;
+  wire [31:0]        rom_data;
+  wire [WIDTH_REG-1:0] port_out;
+  assign LED = port_out[7:0];
 
-  initial
+  reg                  reset = 1'b0;
+  reg [31:0]           reset_counter = 32'd0;
+  always @(posedge CLK)
     begin
-      $dumpfile("wave.vcd");
-      $dumpvars(5, testbench);
-      $monitor("count: %d", count);
-    end
-
-  // クロックを生成
-  initial
-    begin
-      clkt = 1'b1;
-      forever
+      if (reset_counter[RESET_TIMER_BIT] == 1'b1)
         begin
-          #(STEP / 2) clkt = ~clkt;
+          reset <= 1'b0;
+        end
+      else
+        begin
+          reset <= 1'b1;
+          reset_counter <= reset_counter + 1'd1;
         end
     end
 
-  // 同期リセット信号を生成
-  initial
-    begin
-      reset = 1'b0;
-      repeat (2) @(posedge clkt) reset <= 1'b1;
-      @(posedge clkt) reset <= 1'b0;
-    end
-
-  // 指定クロックでシミュレーションを終了させる
-  initial
-    begin
-      repeat (TICKS) @(posedge clkt);
-      $finish;
-    end
-
-  wire [7:0]  rom_addr;
-  wire [31:0] rom_data;
-
   rom rom_0
     (
-     .clk (clkt),
+     .clk (CLK),
      .addr (rom_addr),
      .data_out (rom_data)
      );
 
   simple_cpu simple_cpu_0
     (
-     .clk (clkt),
+     .clk (CLK),
      .reset (reset),
      .rom_addr (rom_addr),
      .rom_data (rom_data),
-     .port_in (),
-     .port_out (count)
+     .port_in ({WIDTH_REG{1'b0}}),
+     .port_out (port_out)
      );
 
 endmodule

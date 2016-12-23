@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015, miya
+  Copyright (c) 2015-2016, miya
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -15,10 +15,10 @@
 
 public class AsmTop
 {
-  private static final Asm asm = new Asm();
+  private static final Program p = new Program();
 
   public static void main(String[] args)
   {
-    asm.do_asm();
+    p.do_asm();
   }
 }

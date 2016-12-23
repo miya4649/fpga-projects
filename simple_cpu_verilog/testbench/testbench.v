@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015, miya
+  Copyright (c) 2015-2016, miya
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -13,46 +13,66 @@
   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-module bemicro_max10_start
-  (
-   input        SYS_CLK,
-   output [7:0] USER_LED,
-   input [3:0]  PB
-   );
+`timescale 1ns / 1ps
 
-  // generate reset signal (push button 1)
-  wire   reset;
-  reg    reset_reg1;
-  reg    reset_reg2;
-  assign reset = reset_reg2;
+module testbench;
+  localparam STEP = 20; // 20 ns: 50MHz
+  localparam TICKS = 20000;
 
-  always @(posedge SYS_CLK)
+  reg clk;
+  reg reset;
+  wire [31:0] count;
+
+  initial
     begin
-      reset_reg1 <= ~PB[0];
-      reset_reg2 <= reset_reg1;
+      $dumpfile("wave.vcd");
+      $dumpvars(5, testbench);
+      $monitor("count: %d", count);
     end
 
-  wire [31:0] led_n;
-  assign USER_LED = ~(led_n[7:0]);
+  // generate clock signal
+  initial
+    begin
+      clk = 1'b1;
+      forever
+        begin
+          #(STEP / 2) clk = ~clk;
+        end
+    end
+
+  // generate reset signal
+  initial
+    begin
+      reset = 1'b0;
+      repeat (2) @(posedge clk) reset <= 1'b1;
+      @(posedge clk) reset <= 1'b0;
+    end
+
+  // stop simulation after TICKS
+  initial
+    begin
+      repeat (TICKS) @(posedge clk);
+      $finish;
+    end
 
   wire [7:0]  rom_addr;
   wire [31:0] rom_data;
 
   rom rom_0
     (
-     .clk (SYS_CLK),
+     .clk (clk),
      .addr (rom_addr),
      .data_out (rom_data)
      );
 
   simple_cpu simple_cpu_0
     (
-     .clk (SYS_CLK),
+     .clk (clk),
      .reset (reset),
      .rom_addr (rom_addr),
      .rom_data (rom_data),
-     .port_in (32'd0),
-     .port_out (led_n)
+     .port_in (),
+     .port_out (count)
      );
 
 endmodule

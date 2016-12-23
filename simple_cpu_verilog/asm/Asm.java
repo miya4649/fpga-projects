@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015, miya
+  Copyright (c) 2015-2016, miya
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -15,8 +15,12 @@
 
 public class Asm
 {
-  private int address;
-  // オペコード
+  private static final int ROM_SIZE = 0x100;
+  private static final int LABEL_SIZE = 0x100;
+  private int p_address;
+  private final int[] rom = new int[ROM_SIZE];
+  private final int[] label_value = new int[LABEL_SIZE];
+  // opcode
   private static final int I_HALT = 0x00;
   private static final int I_LD   = 0x01;
   private static final int I_ST   = 0x02;
@@ -61,159 +65,240 @@ public class Asm
     + "endmodule\n";
 
 
+  public void program()
+  {
+    // program: must be implemented in sub-classes
+  }
+
+  // label (hold the current program counter)
+  public void label(int id)
+  {
+    label_value[id] = p_address;
+  }
+
+  // return the absolute address of the label
+  public int addr_abs(int id)
+  {
+    return label_value[id];
+  }
+
+  // return the relative address between the current line and the label
+  public int addr_rel(int id)
+  {
+    return label_value[id] - p_address;
+  }
+
   public void do_asm()
   {
-    address = 0;
+    for (int i = 0; i < LABEL_SIZE; i++)
+    {
+      label_value[i] = 0;
+    }
+
+    for (int i = 0; i < ROM_SIZE; i++)
+    {
+      rom[i] = 0;
+    }
+
     System.out.printf(header);
 
+    p_address = 0;
+    program(); // pass 1
+    p_address = 0;
+    program(); // pass 2
 
-    // プログラム
-    // カウントアップしてその値をI/Oポートに出力
-    as_mvi(0, 0);
-    as_mvi(1, 1);
-    as_add(0, 0, 1);
-    as_out(0);
-    as_bc(1, -2);
-
-
-    while (address < 0x100)
+    for (int i = 0; i < ROM_SIZE; i++)
     {
-      print_binary(0);
+      print_binary(i);
     }
+
     System.out.printf(footer);
   }
 
-  private void print_binary(int binary)
+  private void print_binary(int i)
   {
-    System.out.printf("        8'h%02x: data_out <= 32'h%08x;\n", address, binary);
-    address++;
+    System.out.printf("        8'h%02x: data_out <= 32'h%08x;\n", i, rom[i]);
   }
 
-  // アセンブラ
-  private void as_halt()
+  private void store_inst(int inst)
   {
-    print_binary(I_HALT);
+    rom[p_address] = inst;
+    p_address++;
+  }
+
+  private int cut_bits(int bits, int value)
+  {
+    return (value & ((1 << bits) - 1));
+  }
+
+  private int set_field(int shift, int bits, int value)
+  {
+    return (cut_bits(bits, value) << shift);
+  }
+
+  private void set_inst_normal(int reg_d, int reg_a, int reg_b, int op)
+  {
+    int inst = 0;
+    inst |= set_field(26, 6, reg_d);
+    inst |= set_field(20, 6, reg_a);
+    inst |= set_field(14, 6, reg_b);
+    inst |= set_field(0, 7, op);
+    store_inst(inst);
+  }
+
+  private void set_inst_im_ldst(int reg_d, int reg_a, int im, int op)
+  {
+    int inst = 0;
+    inst |= set_field(26, 6, reg_d);
+    inst |= set_field(20, 6, reg_a);
+    inst |= set_field(7, 13, im);
+    inst |= set_field(0, 7, op);
+    store_inst(inst);
+  }
+
+  private void set_inst_im_mvi(int reg_d, int im, int op)
+  {
+    int inst = 0;
+    inst |= set_field(26, 6, reg_d);
+    inst |= set_field(7, 16, im);
+    inst |= set_field(0, 7, op);
+    store_inst(inst);
+  }
+
+  private void set_inst_im_bcbl(int reg_d, int im, int op)
+  {
+    int inst = 0;
+    inst |= set_field(26, 6, reg_d);
+    inst |= set_field(7, 19, im);
+    inst |= set_field(0, 7, op);
+    store_inst(inst);
+  }
+
+  // assembly
+
+  public void as_halt()
+  {
+    set_inst_normal(0, 0, 0, I_HALT);
   }
   
-  private void as_add(int reg_d, int reg_a, int reg_b)
+  public void as_add(int reg_d, int reg_a, int reg_b)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_ADD);
+    set_inst_normal(reg_d, reg_a, reg_b, I_ADD);
   }
 
-  private void as_sub(int reg_d, int reg_a, int reg_b)
+  public void as_sub(int reg_d, int reg_a, int reg_b)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_SUB);
+    set_inst_normal(reg_d, reg_a, reg_b, I_SUB);
   }
 
-  private void as_and(int reg_d, int reg_a, int reg_b)
+  public void as_and(int reg_d, int reg_a, int reg_b)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_AND);
+    set_inst_normal(reg_d, reg_a, reg_b, I_AND);
   }
 
-  private void as_or(int reg_d, int reg_a, int reg_b)
+  public void as_or(int reg_d, int reg_a, int reg_b)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_OR);
+    set_inst_normal(reg_d, reg_a, reg_b, I_OR);
   }
 
-  private void as_xor(int reg_d, int reg_a, int reg_b)
+  public void as_xor(int reg_d, int reg_a, int reg_b)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_XOR);
+    set_inst_normal(reg_d, reg_a, reg_b, I_XOR);
   }
 
-  private void as_not(int reg_d, int reg_a)
+  public void as_not(int reg_d, int reg_a)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | I_NOT);
+    set_inst_normal(reg_d, reg_a, 0, I_NOT);
   }
 
-  private void as_ld(int reg_d, int reg_a, int offset)
+  public void as_ld(int reg_d, int reg_a, int offset)
   {
-    // reg_file[reg_d] = mem_d[reg_file[reg_a] + offset]
-    print_binary((reg_d << 26) | (reg_a << 20) | ((offset & 0x1fff) << 7) | I_LD);
+    set_inst_im_ldst(reg_d, reg_a, offset, I_LD);
   }
 
-  private void as_st(int reg_d, int reg_a, int offset)
+  public void as_st(int reg_d, int reg_a, int offset)
   {
-    // mem_d[reg_file[reg_a] + offset] = reg_file[reg_d]
-    print_binary((reg_d << 26) | (reg_a << 20) | ((offset & 0x1fff) << 7) | I_ST);
+    set_inst_im_ldst(reg_d, reg_a, offset, I_ST);
   }
 
-  private void as_mv(int reg_d, int reg_a, int reg_b)
+  public void as_mv(int reg_d, int reg_a, int reg_b)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_MV);
+    set_inst_normal(reg_d, reg_a, reg_b, I_MV);
   }
 
-  private void as_mvi(int reg_d, int value)
+  public void as_mvi(int reg_d, int value)
   {
-    print_binary((reg_d << 26) | ((value & 0xffff) << 7) | I_MVI);
+    set_inst_im_mvi(reg_d, value, I_MVI);
   }
 
-  private void as_mvih(int reg_d, int value)
+  public void as_mvih(int reg_d, int value)
   {
-    print_binary((reg_d << 26) | ((value & 0xffff) << 7) | I_MVIH);
+    set_inst_im_mvi(reg_d, value, I_MVIH);
   }
 
-  private void as_sr(int reg_d, int reg_a, int reg_b)
+  public void as_sr(int reg_d, int reg_a, int reg_b)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_SR);
+    set_inst_normal(reg_d, reg_a, reg_b, I_SR);
   }
 
-  private void as_sl(int reg_d, int reg_a, int reg_b)
+  public void as_sl(int reg_d, int reg_a, int reg_b)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_SL);
+    set_inst_normal(reg_d, reg_a, reg_b, I_SL);
   }
 
-  private void as_sra(int reg_d, int reg_a, int reg_b)
+  public void as_sra(int reg_d, int reg_a, int reg_b)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_SRA);
+    set_inst_normal(reg_d, reg_a, reg_b, I_SRA);
   }
 
-  private void as_ceq(int reg_d, int reg_a, int reg_b)
+  public void as_ceq(int reg_d, int reg_a, int reg_b)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_CEQ);
+    set_inst_normal(reg_d, reg_a, reg_b, I_CEQ);
   }
 
-  private void as_cgt(int reg_d, int reg_a, int reg_b)
+  public void as_cgt(int reg_d, int reg_a, int reg_b)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_CGT);
+    set_inst_normal(reg_d, reg_a, reg_b, I_CGT);
   }
 
-  private void as_cgta(int reg_d, int reg_a, int reg_b)
+  public void as_cgta(int reg_d, int reg_a, int reg_b)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_CGTA);
+    set_inst_normal(reg_d, reg_a, reg_b, I_CGTA);
   }
 
-  private void as_bc(int reg_d, int offset)
+  public void as_bc(int reg_d, int offset)
   {
-    print_binary((reg_d << 26) | ((offset & 0x7ffff) << 7) | I_BC);
+    set_inst_im_bcbl(reg_d, offset, I_BC);
   }
 
-  private void as_bl(int reg_d, int offset)
+  public void as_bl(int reg_d, int offset)
   {
-    print_binary((reg_d << 26) | ((offset & 0x7ffff) << 7) | I_BL);
+    set_inst_im_bcbl(reg_d, offset, I_BL);
   }
 
-  private void as_ba(int reg_a)
+  public void as_ba(int reg_a)
   {
-    print_binary((reg_a << 20) | I_BA);
+    set_inst_normal(0, reg_a, 0, I_BA);
   }
 
-  private void as_nop()
+  public void as_nop()
   {
+    set_inst_normal(0, 0, 0, I_NOP);
     print_binary(I_NOP);
   }
 
-  private void as_in(int reg_d)
+  public void as_in(int reg_d)
   {
-    print_binary((reg_d << 26) | I_IN);
+    set_inst_normal(reg_d, 0, 0, I_IN);
   }
 
-  private void as_out(int reg_a)
+  public void as_out(int reg_a)
   {
-    print_binary((reg_a << 20) | I_OUT);
+    set_inst_normal(0, reg_a, 0, I_OUT);
   }
 
-  private void as_mul(int reg_d, int reg_a, int reg_b)
+  public void as_mul(int reg_d, int reg_a, int reg_b)
   {
-    print_binary((reg_d << 26) | (reg_a << 20) | (reg_b << 14) | I_MUL);
+    set_inst_normal(reg_d, reg_a, reg_b, I_MUL);
   }
 }

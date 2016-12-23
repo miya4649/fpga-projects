@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015, miya
+  Copyright (c) 2015-2016, miya
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -15,100 +15,101 @@
 
 
 module simple_cpu
+  #(
+    parameter WIDTH_I = 32,
+    parameter WIDTH_D = 32,
+    parameter WIDTH_REG = 32,
+    parameter DEPTH_I = 8,
+    parameter DEPTH_D = 8,
+    parameter DEPTH_REG = 4
+    )
   (
-   input             clk,
-   input             reset,
-   output reg [7:0]  rom_addr,
-   input [31:0]      rom_data,
-   input [31:0]      port_in,
-   output reg [31:0] port_out
+   input                    clk,
+   input                    reset,
+   output reg [DEPTH_I-1:0] rom_addr,
+   input [WIDTH_I-1:0]      rom_data,
+   input [WIDTH_D-1:0]      port_in,
+   output reg [WIDTH_D-1:0] port_out
    );
 
-  parameter WIDTH_I = 32;
-  parameter WIDTH_D = 32;
-  parameter WIDTH_REG = 32;
-  parameter DEPTH_I = 8;
-  parameter DEPTH_D = 8;
-  parameter DEPTH_REG = 4;
-
-  parameter S_0 = 0;
-  parameter S_1 = 1;
-  parameter S_2 = 2;
-  parameter S_3 = 3;
-  parameter S_4 = 4;
-  parameter S_5 = 5;
+  localparam S_0 = 0;
+  localparam S_1 = 1;
+  localparam S_2 = 2;
+  localparam S_3 = 3;
+  localparam S_4 = 4;
+  localparam S_5 = 5;
 
   // opcode
   // 3 cycles
-  parameter I_HALT = 7'h00;
-  parameter I_LD   = 7'h01;
-  parameter I_ST   = 7'h02;
-  parameter I_BC   = 7'h03;
-  parameter I_BL   = 7'h04;
-  parameter I_BA   = 7'h05;
+  localparam I_HALT = 7'h00;
+  localparam I_LD   = 7'h01;
+  localparam I_ST   = 7'h02;
+  localparam I_BC   = 7'h03;
+  localparam I_BL   = 7'h04;
+  localparam I_BA   = 7'h05;
   // 1 cycle
-  parameter I_NOP  = 7'h40;
-  parameter I_ADD  = 7'h41;
-  parameter I_SUB  = 7'h42;
-  parameter I_AND  = 7'h43;
-  parameter I_OR   = 7'h44;
-  parameter I_XOR  = 7'h45;
-  parameter I_NOT  = 7'h46;
-  parameter I_MV   = 7'h47;
-  parameter I_MVI  = 7'h48;
-  parameter I_MVIH = 7'h49;
-  parameter I_SR   = 7'h4a;
-  parameter I_SL   = 7'h4b;
-  parameter I_SRA  = 7'h4c;
-  parameter I_CEQ  = 7'h4d;
-  parameter I_CGT  = 7'h4e;
-  parameter I_CGTA = 7'h4f;
-  parameter I_IN   = 7'h50;
-  parameter I_OUT  = 7'h51;
-  parameter I_MUL  = 7'h52;
+  localparam I_NOP  = 7'h40;
+  localparam I_ADD  = 7'h41;
+  localparam I_SUB  = 7'h42;
+  localparam I_AND  = 7'h43;
+  localparam I_OR   = 7'h44;
+  localparam I_XOR  = 7'h45;
+  localparam I_NOT  = 7'h46;
+  localparam I_MV   = 7'h47;
+  localparam I_MVI  = 7'h48;
+  localparam I_MVIH = 7'h49;
+  localparam I_SR   = 7'h4a;
+  localparam I_SL   = 7'h4b;
+  localparam I_SRA  = 7'h4c;
+  localparam I_CEQ  = 7'h4d;
+  localparam I_CGT  = 7'h4e;
+  localparam I_CGTA = 7'h4f;
+  localparam I_IN   = 7'h50;
+  localparam I_OUT  = 7'h51;
+  localparam I_MUL  = 7'h52;
 
-  parameter TRUE = 1'b1;
-  parameter FALSE = 1'b0;
-  parameter ONE = 1'd1;
-  parameter ZERO = 1'd0;
-  parameter FFFF = {WIDTH_D{1'b1}};
+  localparam TRUE = 1'b1;
+  localparam FALSE = 1'b0;
+  localparam ONE = 1'd1;
+  localparam ZERO = 1'd0;
+  localparam FFFF = {WIDTH_D{1'b1}};
 
-  wire [WIDTH_I-1:0]   mem_i_o;
-  reg [DEPTH_I-1:0]    mem_i_addr;
-  reg [WIDTH_I-1:0]    mem_i_i;
-  reg                  mem_i_we;
+  wire [WIDTH_I-1:0]        mem_i_o;
+  reg [DEPTH_I-1:0]         mem_i_addr;
+  reg [WIDTH_I-1:0]         mem_i_i;
+  reg                       mem_i_we;
 
-  wire [WIDTH_D-1:0]   mem_d_o;
-  reg [DEPTH_D-1:0]    mem_d_addr;
-  reg [WIDTH_D-1:0]    mem_d_i;
-  reg                  mem_d_we;
+  wire [WIDTH_D-1:0]        mem_d_o;
+  reg [DEPTH_D-1:0]         mem_d_addr;
+  reg [WIDTH_D-1:0]         mem_d_i;
+  reg                       mem_d_we;
 
-  reg                  cpu_en;
-  reg                  fetch_valid;
-  reg [DEPTH_I-1:0]    pc;
-  reg [WIDTH_I-1:0]    inst;
-  reg [WIDTH_I-1:0]    inst_next;
-  reg [10:0]           stage_init;
-  reg [2:0]            stage_cpu;
-  reg [2:0]            stage_fetch;
-  wire [6:0]           op;
-  wire [5:0]           reg_d_addr;
-  wire [5:0]           reg_a_addr;
-  wire [5:0]           reg_b_addr;
-  wire [15:0]          im16;
-  wire signed [12:0]   ims13;
-  wire signed [18:0]   ims19;
-  wire                 is_one_cycle;
+  reg                       cpu_en;
+  reg                       fetch_valid;
+  reg [DEPTH_I-1:0]         pc;
+  reg [WIDTH_I-1:0]         inst;
+  reg [WIDTH_I-1:0]         inst_next;
+  reg [10:0]                stage_init;
+  reg [2:0]                 stage_cpu;
+  reg [2:0]                 stage_fetch;
+  wire [6:0]                op;
+  wire [5:0]                reg_d_addr;
+  wire [5:0]                reg_a_addr;
+  wire [5:0]                reg_b_addr;
+  wire [15:0]               im16;
+  wire signed [12:0]        ims13;
+  wire signed [18:0]        ims19;
+  wire                      is_one_cycle;
 
   // register file
-  reg [WIDTH_REG-1:0]  reg_file[(1 << DEPTH_REG)-1:0];
+  reg [WIDTH_REG-1:0]       reg_file [0:(1 << DEPTH_REG)-1];
 
   // decode
   assign op = inst[6:0];
   assign is_one_cycle = inst[6];
-  assign reg_d_addr = inst[31:26];
-  assign reg_a_addr = inst[25:20];
-  assign reg_b_addr = inst[19:14];
+  assign reg_d_addr = inst[DEPTH_REG+26-1:26];
+  assign reg_a_addr = inst[DEPTH_REG+20-1:20];
+  assign reg_b_addr = inst[DEPTH_REG+14-1:14];
   assign im16 = inst[22:7];
   assign ims13 = inst[19:7];
   assign ims19 = inst[25:7];
