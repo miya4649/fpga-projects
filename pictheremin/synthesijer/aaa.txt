@@ -1,0 +1,168 @@
+<span class="c1">/*<br />
+&nbsp;&nbsp;Copyright (c) 2017, miya<br />
+&nbsp;&nbsp;All rights reserved.<br />
+<br />
+&nbsp;&nbsp;Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:<br />
+<br />
+&nbsp;&nbsp;1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.<br />
+<br />
+&nbsp;&nbsp;2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.<br />
+<br />
+&nbsp;&nbsp;THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.<br />
+&nbsp;&nbsp;IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,<br />
+&nbsp;&nbsp;PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.<br />
+*/</span><br />
+<br />
+import synthesijer.lib.led.*;<br />
+import synthesijer.rt.*;<br />
+<br />
+public class I2CIface<br />
+{<br />
+&nbsp;&nbsp;public final FreeRunCounter32Iface counter = new FreeRunCounter32Iface();<br />
+&nbsp;&nbsp;public final I2CWrapper i2c = new I2CWrapper();<br />
+<br />
+&nbsp;&nbsp;<span class="c1">// COUNT = 50,000,000 Hz / 100,000 Hz / 4 = 125<br /></span>
+&nbsp;&nbsp;private int count;<br />
+<br />
+&nbsp;&nbsp;public void i2cInit(int divider)<br />
+&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;count = divider;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;counter.reset();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2c.data_o = 0x03; <span class="c1">// sda_o:1 scl_o:1<br /></span>
+&nbsp;&nbsp;}<br />
+<br />
+&nbsp;&nbsp;public int getCycle()<br />
+&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;return counter.get();<br />
+&nbsp;&nbsp;}<br />
+<br />
+&nbsp;&nbsp;public void cycleWait(int cycles)<br />
+&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;counter.cycleWait(cycles);<br />
+&nbsp;&nbsp;}<br />
+<br />
+&nbsp;&nbsp;public void i2cWait()<br />
+&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;counter.cycleWait(count);<br />
+&nbsp;&nbsp;}<br />
+<br />
+&nbsp;&nbsp;public void i2cStart()<br />
+&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2c.data_o = 0x03; <span class="c1">// sda_o:1 scl_o:1<br /></span>
+&nbsp;&nbsp;&nbsp;&nbsp;i2cWait();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2cWait();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2c.data_o = 0x01; <span class="c1">// sda_o:0 scl_o:1<br /></span>
+&nbsp;&nbsp;&nbsp;&nbsp;i2cWait();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2c.data_o = 0x00; <span class="c1">// sda_o:0 scl_o:0<br /></span>
+&nbsp;&nbsp;&nbsp;&nbsp;i2cWait();<br />
+&nbsp;&nbsp;}<br />
+<br />
+&nbsp;&nbsp;private void i2cTxBit(int data)<br />
+&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;int sda = data &lt;&lt; 1;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2c.data_o = sda | 0; <span class="c1">// sda_o:sda scl_o:0<br /></span>
+&nbsp;&nbsp;&nbsp;&nbsp;i2cWait();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2c.data_o = sda | 1; <span class="c1">// sda_o:sda scl_o:1<br /></span>
+&nbsp;&nbsp;&nbsp;&nbsp;i2cWait();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2cWait();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;while ((i2c.data_i &amp; 2) == 0)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c1">// clock stretching<br /></span>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2c.data_o = sda | 0; <span class="c1">// sda_o:sda scl_o:0<br /></span>
+&nbsp;&nbsp;&nbsp;&nbsp;i2cWait();<br />
+&nbsp;&nbsp;}<br />
+<br />
+&nbsp;&nbsp;private int i2cRxBit()<br />
+&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2c.data_o = 0x02; <span class="c1">// sda_o:1 scl_o:0<br /></span>
+&nbsp;&nbsp;&nbsp;&nbsp;i2cWait();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2c.data_o = 0x03; <span class="c1">// sda_o:1 scl_o:1<br /></span>
+&nbsp;&nbsp;&nbsp;&nbsp;i2cWait();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;while ((i2c.data_i &amp; 2) == 0)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c1">// clock stretching<br /></span>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;&nbsp;&nbsp;int data = i2c.data_i &amp; 1;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2cWait();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2c.data_o = 0x02; <span class="c1">// sda_o:1 scl_o:0<br /></span>
+&nbsp;&nbsp;&nbsp;&nbsp;i2cWait();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;return data;<br />
+&nbsp;&nbsp;}<br />
+<br />
+&nbsp;&nbsp;public boolean i2cTx(int data)<br />
+&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;boolean ack;<br />
+<br />
+&nbsp;&nbsp;&nbsp;&nbsp;for (int i = 0; i &lt; 8; i++)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int sda = (data &amp; 0x80) &gt;&gt;&gt; 7;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;i2cTxBit(sda);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;data &lt;&lt;= 1;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+<br />
+&nbsp;&nbsp;&nbsp;&nbsp;if (i2cRxBit() == 0)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ack = true;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;&nbsp;&nbsp;else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ack = false;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+<br />
+&nbsp;&nbsp;&nbsp;&nbsp;return ack;<br />
+&nbsp;&nbsp;}<br />
+<br />
+&nbsp;&nbsp;public int i2cRx(boolean isAck)<br />
+&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;int data = 0;<br />
+<br />
+&nbsp;&nbsp;&nbsp;&nbsp;for (int i = 0; i &lt; 8; i++)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;data &lt;&lt;= 1;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;data |= i2cRxBit();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+<br />
+&nbsp;&nbsp;&nbsp;&nbsp;if (isAck)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;i2cTxBit(0);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;&nbsp;&nbsp;else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;i2cTxBit(1);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;&nbsp;&nbsp;return data;<br />
+&nbsp;&nbsp;}<br />
+<br />
+&nbsp;&nbsp;public void i2cStop()<br />
+&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2c.data_o = 0x01; <span class="c1">// sda_o:0 scl_o:1<br /></span>
+&nbsp;&nbsp;&nbsp;&nbsp;i2cWait();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2cWait();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2c.data_o = 0x03; <span class="c1">// sda_o:1 scl_o:1<br /></span>
+&nbsp;&nbsp;&nbsp;&nbsp;i2cWait();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2cWait();<br />
+&nbsp;&nbsp;}<br />
+<br />
+&nbsp;&nbsp;public void i2cWrite(int addr, int reg, int data)<br />
+&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2cStart();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2cTx(addr &lt;&lt; 1);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2cTx(reg);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2cTx(data);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2cStop();<br />
+&nbsp;&nbsp;}<br />
+<br />
+&nbsp;&nbsp;public int i2cRead(int addr, int reg)<br />
+&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2cStart();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2cTx(addr &lt;&lt; 1);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2cTx(reg);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2cStart();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2cTx((addr &lt;&lt; 1) | 1);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;int data = i2cRx(false);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;i2cStop();<br />
+&nbsp;&nbsp;&nbsp;&nbsp;return data;<br />
+&nbsp;&nbsp;}<br />
+}<br />
+
